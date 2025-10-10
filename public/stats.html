@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru" class="theme-c">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Статистика</title>
+
+  <link rel="stylesheet" href="/themes.css"/>
+  <link rel="stylesheet" href="/styles.css"/>
+
+  <script defer src="/themes.js"></script>
+  <script defer src="/main.js"></script>
+ 
+</head>
+<body>
+  <!-- Верхняя панель: переключатель языка + темы -->
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+    <div class="h1" data-i18n="nav.stats">Статистика</div>
+
+    <div style="display:flex;gap:8px;align-items:center;">
+      <!-- Переключатель языка -->
+      <div class="tabs" id="langSwitch" style="gap:6px;">
+	    <button id="aboutBtn" class="lang-btn about-btn">ℹ️</button>
+        <button type="button" class="lang-btn" data-lang="ru">RU</button>
+        <button type="button" class="lang-btn" data-lang="en">EN</button>
+		<button type="button" class="lang-btn" data-lang="uk">UK</button>
+      </div>
+
+      <div class="tabs theme-switch" style="gap:6px;">
+        <a href="#" data-theme-link="a">Neo-Noir</a>
+        <a href="#" data-theme-link="b">Glass</a>
+        <a href="#" data-theme-link="c" class="active">Light</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Карточка со статистикой -->
+  <div class="card">
+    <h2 class="h2" data-i18n="stats.title">СТАТИСТИКА</h2>
+    <div class="tabs" id="periodTabs">
+      <button class="active" data-period="day" data-i18n="stats.day">День</button>
+      <button data-period="week" data-i18n="stats.week">Неделя</button>
+      <button data-period="month" data-i18n="stats.month">Месяц</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="kpi-value" id="kpi-total">0</div>
+    <div class="kpi-label" data-i18n="stats.total">Всего отметок</div>
+
+    <div class="table">
+      <div class="tr"><span data-i18n="intent.war">🕊️ Стоп война</span><span id="kpi-war">0</span></div>
+      <div class="tr"><span data-i18n="intent.climate">🔥 Катаклизмы</span><span id="kpi-climate">0</span></div>
+      <div class="tr"><span data-i18n="intent.personal">😊 Личное</span><span id="kpi-personal">0</span></div>
+      <div class="tr"><span data-i18n="intent.family">👥 Близкие</span><span id="kpi-family">0</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="h2" data-i18n="stats.topCountries">ТОП стран</h2>
+    <div class="table" id="topTable"></div>
+  </div>
+  
+  <div class="card">
+    <h2 class="h2" data-i18n="stats.topRegions">Регионы страны</h2>
+    <div class="table" id="regionsList"></div>
+  </div>  
+  
+  <div class="card">
+    <h2 class="h2" data-i18n="stats.gender.title">Пол</h2>
+    <div class="table" id="genderList"></div>
+  </div>
+
+  <div class="card">
+    <h2 class="h2" data-i18n="stats.age.title">Возраст</h2>
+    <div class="table" id="ageList"></div>
+  </div>
+
+
+
+  <!-- Навигация -->
+  <div class="card" style="padding:12px;">
+    <nav class="tabs">
+      <a href="/index.html" class="tablink" data-i18n="nav.home">Главная</a>
+      <a href="/profile.html" class="tablink" data-i18n="nav.profile">Профиль</a>
+    </nav>
+  </div>
+  
+  <div id="aboutModal" class="modal" hidden>
+    <div class="modal__backdrop"></div>
+    <div class="modal__card">
+      <div class="modal__title" data-i18n="about.title">О проекте</div>
+	  <!-- pre-line сохраняет переносы из переводов -->
+      <div class="modal__body" data-i18n="about.body" style="white-space: pre-line;"></div>
+      <div class="modal__actions">
+        <button id="aboutClose" class="btn primary" data-i18n="btn.close">Закрыть</button>
+      </div>
+    </div>
+  </div>
+  
+</body>
+</html>

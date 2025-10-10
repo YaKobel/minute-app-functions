@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ru" class="theme-c">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Профиль</title>
+
+  <link rel="stylesheet" href="/themes.css"/>
+  <link rel="stylesheet" href="/styles.css"/>
+
+  <script defer src="/themes.js"></script>
+  <script defer src="/main.js"></script>
+ 
+</head>
+<body>
+  <!-- Верхняя панель: переключатель языка + (опционально) темы -->
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+    <div class="h1" data-i18n="profile.title">ПРОФИЛЬ</div>
+
+    <div style="display:flex;gap:8px;align-items:center;">
+      <!-- Переключатель языка -->
+      <div class="tabs" id="langSwitch" style="gap:6px;">
+	    <button id="aboutBtn" class="lang-btn about-btn">ℹ️</button>
+        <button type="button" class="lang-btn" data-lang="ru">RU</button>
+        <button type="button" class="lang-btn" data-lang="en">EN</button>
+		<button type="button" class="lang-btn" data-lang="uk">UK</button>
+      </div>
+
+      <!-- Если не нужны кнопки тем — оберни в .theme-switch и скрой в CSS -->
+      <div class="tabs theme-switch" style="gap:6px;">
+        <a href="#" data-theme-link="a">Neo-Noir</a>
+        <a href="#" data-theme-link="b">Glass</a>
+        <a href="#" data-theme-link="c" class="active">Light</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <form class="form" id="profileForm">
+      <label data-i18n="profile.country">Страна</label>
+      <select id="country"></select>
+
+      <label data-i18n="profile.region">Регион</label>
+      <select id="region"></select>
+
+      <label data-i18n="profile.gender.title">Пол</label>
+      <select id="gender" required>
+        <option value="" disabled selected data-i18n="profile.gender.placeholder">Выберите…</option>
+	    <option value="male" data-i18n="profile.gender.male">Мужской</option>
+	    <option value="female" data-i18n="profile.gender.female">Женский</option>
+      </select>
+
+      <label data-i18n="profile.age.title">Возраст</label>
+	  <select id="age">
+        <option value="" disabled selected data-i18n="profile.age.placeholder">Выберите возраст</option>
+        <option value="-14"   data-i18n="profile.age.group.-14">-14</option>
+        <option value="15-20" data-i18n="profile.age.group.15-20">15–20</option>
+        <option value="21-26" data-i18n="profile.age.group.21-26">21–26</option>
+        <option value="27-32" data-i18n="profile.age.group.27-32">27–32</option>
+        <option value="33-38" data-i18n="profile.age.group.33-38">33–38</option>
+        <option value="39-44" data-i18n="profile.age.group.39-44">39–44</option>
+        <option value="45-50" data-i18n="profile.age.group.45-50">45–50</option>
+        <option value="51-56" data-i18n="profile.age.group.51-56">51–56</option>
+        <option value="57-62" data-i18n="profile.age.group.57-62">57–62</option>
+        <option value="63-68" data-i18n="profile.age.group.63-68">63–68</option>
+        <option value="69-74" data-i18n="profile.age.group.69-74">69–74</option>
+        <option value="75-80" data-i18n="profile.age.group.75-80">75–80</option>
+        <option value="81-86" data-i18n="profile.age.group.81-86">81–86</option>
+        <option value="87-92" data-i18n="profile.age.group.87-92">87–92</option>
+	    <option value="93+"   data-i18n="profile.age.group.93+">+93</option>
+	  </select>
+	  
+      <button type="button" id="saveProfileBtn" class="btn-primary" data-i18n="profile.save">
+        Сохранить профиль
+      </button>
+      <div id="saveNote" class="small" style="color:var(--text-muted,#6b7280);margin-top:6px;"
+           data-i18n="profile.note">
+        Данные сохраняются в Firebase
+      </div>
+    </form>
+  </div>
+
+  <!-- Низовая навигация -->
+  <div class="card" style="padding:12px;">
+    <nav class="tabs">
+      <a href="/index.html"  class="tablink" data-i18n="nav.home">Главная</a>
+      <a href="/stats.html"  class="tablink" data-i18n="nav.stats">Статистика</a>
+    </nav>
+  </div>
+  
+  <div id="aboutModal" class="modal" hidden>
+    <div class="modal__backdrop"></div>
+    <div class="modal__card">
+      <div class="modal__title" data-i18n="about.title">О проекте</div>
+	  <!-- pre-line сохраняет переносы из переводов -->
+      <div class="modal__body" data-i18n="about.body" style="white-space: pre-line;"></div>
+      <div class="modal__actions">
+        <button id="aboutClose" class="btn primary" data-i18n="btn.close">Закрыть</button>
+      </div>
+    </div>
+  </div>
+  
+</body>
+</html>

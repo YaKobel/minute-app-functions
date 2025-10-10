@@ -1,0 +1,505 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  font: 16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+}
+
+/* === Тёмная тема (theme-a) === */
+:root.theme-a body {
+  background: linear-gradient(180deg, #0a0e0e, #0a0e0e 50%, #0b1010);
+  color: var(--text);
+}
+
+:root.theme-a .card {
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  border: 1px solid rgba(255, 255, 255, .06);
+  border-radius: 18px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.35),
+              0 0 40px rgba(36,255,158,.05) inset;
+}
+
+/* === Light-тема (theme-c) === */
+:root.theme-c body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+:root.theme-c .card {
+  background: var(--bg-card, #ffffff);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+:root.theme-c .h1 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  letter-spacing: .2px;
+}
+
+:root.theme-c .h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--primary, #2563eb);
+}
+
+:root.theme-c .timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+:root.theme-c .timer .big {
+  font-size: 36px;
+  font-weight: 700;
+  margin-top: 8px;
+  color: var(--primary, #2563eb);
+  text-shadow: none;
+}
+
+/* Кнопки-намерения */
+:root.theme-c .intent-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  background: var(--bg-input, #fff);
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+:root.theme-c .intent-btn:hover {
+  background: #f9fafb;
+}
+:root.theme-c .intent-btn .icon { font-size: 20px; }
+:root.theme-c .intent-war .icon { color: #2563eb; }
+:root.theme-c .intent-climate .icon { color: #dc2626; }
+:root.theme-c .intent-personal .icon { color: #f59e0b; }
+:root.theme-c .intent-family .icon { color: #16a34a; }
+
+/* Таббар */
+:root.theme-c .tabs {
+  display: flex;
+  gap: 12px;
+}
+:root.theme-c .tabs button {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 20px;
+  background: #f3f4f6;
+  font-size: 14px;
+  cursor: pointer;
+}
+:root.theme-c .tabs button.active {
+  background: var(--primary, #2563eb);
+  color: #fff;
+  border-color: var(--primary, #2563eb);
+}
+
+/* KPI */
+:root.theme-c .kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+}
+:root.theme-c .kpi-label {
+  font-size: 14px;
+  color: var(--text-muted, #6b7280);
+}
+
+/* TOP стран */
+:root.theme-c .table .tr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 6px 0;
+}
+:root.theme-c .table .bar {
+  flex: 1;
+  margin-left: 12px;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+:root.theme-c .table .bar i {
+  display: block;
+  height: 100%;
+  background: var(--primary, #2563eb);
+}
+
+/* Профиль */
+:root.theme-c .form input,
+:root.theme-c .form select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  font-size: 15px;
+  background: #fff;
+}
+:root.theme-c .btn-primary {
+  background: var(--primary, #2563eb);
+  color: #fff;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+:root.theme-c .btn-primary:hover {
+  background: #1d4ed8;
+}
+
+/* Навигация внизу (ссылки как кнопки) */
+:root.theme-c .tabs a.tablink {
+  flex: 1;
+  text-align: center;
+  padding: 8px 12px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 20px;
+  background: #f3f4f6;
+  font-size: 14px;
+  text-decoration: none;
+  color: inherit;
+}
+:root.theme-c .tabs a.tablink:active {
+  background: var(--primary, #2563eb);
+  color: #fff;
+  border-color: var(--primary, #2563eb);
+}
+
+/* Скрыть свитчеры тем везде */
+.theme-switch { display: none !important; }
+
+
+.finger-wrap { display:flex; justify-content:center; margin: 16px 0 8px; }
+.finger-btn{
+  position:relative;
+  width: 220px; height: 220px; border:0; border-radius:9999px;
+  background: radial-gradient(60% 60% at 50% 50%, rgba(46,170,220,.12), rgba(46,170,220,.02) 70%, transparent 100%);
+  box-shadow: 0 10px 30px rgba(46,170,220,.25), inset 0 0 30px rgba(46,170,220,.25);
+  color:#19b36b;  /* цвет линий отпечатка, можно сменить */
+  cursor:pointer; transition: transform .15s ease, box-shadow .2s ease;
+}
+.finger-btn:hover{ transform: translateY(-2px) scale(1.02); }
+.finger-btn:active{ transform: translateY(0) scale(.98); }
+
+.fingerprint{
+  position:absolute; inset:0; margin:auto; width:140px; height:140px;
+  filter: drop-shadow(0 0 12px rgba(25,179,107,.35));
+}
+
+.finger-ring{
+  position:absolute; inset:0; margin:auto; width:184px; height:184px;
+}
+.finger-ring .bg{
+  fill:none; stroke: rgba(25,179,107,.15); stroke-width: 14;
+}
+.finger-ring .fg{
+  fill:none; stroke: #2e6bff; stroke-width: 14; stroke-linecap: round;
+  stroke-dasharray: 528;               /* 2πr ≈ 2*π*84 */
+  stroke-dashoffset: 0;                /* управляется JS */
+  transition: stroke-dashoffset .25s linear;
+}
+.finger-ring .timer{
+  fill: #294; font-weight: 600;
+}
+
+/* состояние «идёт минута» */
+.finger-btn.running{
+  box-shadow: 0 12px 36px rgba(46,107,255,.35), inset 0 0 36px rgba(46,107,255,.25);
+}
+
+.fingerprint-wrap{display:flex;justify-content:center;align-items:center;margin:28px 0 8px;}
+.fingerprint-wrap .ring{
+  width:210px;height:210px;border-radius:50%;
+  box-shadow:0 0 0 12px rgba(44,94,255,.15) inset, 0 8px 20px rgba(44,94,255,.12);
+  animation:pulse 2.6s ease-in-out infinite;
+}
+.fingerprint-wrap .core{
+  position:absolute;width:140px;height:140px;border-radius:50%;
+  background:#fff;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 24px rgba(0,0,0,.05), 0 0 0 8px rgba(44,94,255,.08);
+}
+#circleTimer{font-family:ui-sans-serif,system-ui; font-weight:700; font-size:28px; color:#19a263;}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 12px rgba(44,94,255,.15) inset}
+  50%{box-shadow:0 0 0 6px rgba(44,94,255,.2) inset}
+  100%{box-shadow:0 0 0 12px rgba(44,94,255,.15) inset}
+}
+
+/* Оверлей успеха */
+.ok-overlay{position:fixed;inset:0;background:rgba(255,255,255,.9);backdrop-filter:saturate(1.1) blur(3px);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.ok-card{width:min(86vw,420px);aspect-ratio:3/4;background:#fff;border-radius:22px;box-shadow:0 16px 40px rgba(0,0,0,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;}
+.ok-time{font-size:42px;font-weight:800;color:#19a263;letter-spacing:2px}
+.ok-fp{width:160px;height:160px;border-radius:50%;background:
+ radial-gradient(circle at 50% 40%, #19a263 0 28%, transparent 28% 100%),
+ radial-gradient(circle at 50% 60%, #19a263 0 24%, transparent 24% 100%),
+ radial-gradient(circle at 50% 50%, #19a263 0 4%, transparent 4% 100%); 
+ box-shadow:0 0 0 14px rgba(25,162,99,.15), 0 18px 40px rgba(25,162,99,.18);}
+.ok-title{font-size:32px;font-weight:800;color:#0f172a}
+.ok-sub{font-size:18px;color:#334155}
+
+.intent-btn {
+  transition: transform .06s ease, box-shadow .15s ease, outline-color .15s ease;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.intent-btn:active { transform: translateY(1px) scale(0.99); }
+.intent-btn.selected {
+  outline-color: #2563eb;
+  box-shadow: 0 0 0 6px rgba(37,99,235,.12);
+}
+
+/* опционально: визуально «неактивный» палец до выбора намерения */
+.finger-btn[disabled] { opacity:.6; pointer-events:none; }
+
+
+/* pills */
+.pill { border-radius: 999px; padding: 8px 14px; background: #eef2ff; border: 0; }
+.pill.primary { background: #dbeafe; }
+.pill.toggle.is-on { outline: 2px solid #2563eb; }
+
+/* намерения (оставь как было, добавил только selected) */
+.intent-btn { outline: 2px solid transparent; outline-offset: 2px; transition: outline-color .15s, box-shadow .15s; }
+.intent-btn.selected { outline-color: #2563eb; box-shadow: 0 0 0 6px rgba(37,99,235,.12); }
+.intent-btn:active { transform: translateY(1px) scale(0.99); }
+
+/* палец / кнопка старта */
+#fingerBtn.finger-running { position: relative; }
+/* отпечаток никогда не показываем */
+#fingerBtn .fingerprint { display: none !important; }
+
+/* радужный перелив внутри круга, показываем только во время минуты */
+#fingerBtn .rainbow {
+  position: absolute; inset: 36% 36%; border-radius: 50%;
+  background: conic-gradient(red, orange, yellow, green, cyan, blue, violet, red);
+  filter: saturate(120%);
+  animation: spin 2s linear infinite;
+  display: none;
+}
+#fingerBtn.finger-running .rainbow { display: block; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+
+/* ——— режимы (три кнопки) ——— */
+.mode-btn{
+  appearance:none; border:1px solid rgba(0,0,0,.06);
+  background:#f6f8ff; border-radius:9999px;
+  padding:10px 14px; font-weight:600;
+  box-shadow:0 1px 2px rgba(0,0,0,.05);
+  transition:transform .06s, box-shadow .15s, background .15s;
+}
+.mode-btn.primary{ background:#dce8ff; }
+.mode-btn.toggle.is-on{ outline:2px solid #2563eb; box-shadow:0 0 0 6px rgba(37,99,235,.12); }
+.mode-btn:active{ transform:translateY(1px) scale(.99); }
+
+/* ——— мягкая радужная подсветка почти до синей дуги ——— */
+#fingerBtn{ position:relative; } /* на всякий случай */
+#fingerBtn .rainbow{
+  position:absolute;
+  inset:14%;                 /* ширина «света» — можно 12–16% подогнать */
+  border-radius:50%;
+  background:
+    radial-gradient(closest-side, rgba(255,255,255,.65), rgba(255,255,255,.25), transparent 70%),
+    conic-gradient(
+      rgba(255,87,87,.22),   rgba(255,179,71,.22),  rgba(255,241,118,.22),
+      rgba(129,199,132,.22), rgba(77,182,172,.22),  rgba(66,165,245,.22),
+      rgba(171,71,188,.22),  rgba(255,87,87,.22)
+    );
+  filter: blur(1.5px) saturate(110%);
+  animation: rainbow-spin 8s linear infinite;
+  display:none; z-index:1;   /* ниже синей дуги */
+  pointer-events:none;
+}
+/* Показ только во время минуты (класс добавляет JS) */
+#fingerBtn.finger-running .rainbow{ display:block; }
+
+/* синяя дуга должна быть выше радуги */
+#fingerBtn .finger-ring{ z-index:2; position:absolute; inset:0; margin:auto; }
+
+/* цифры таймера — поверх всего (если есть HTML-слой с классом .timer) */
+#fingerBtn .timer{
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  z-index:3; pointer-events:none;
+}
+
+@keyframes rainbow-spin{ to{ transform:rotate(360deg); } }
+/* цифры внутри svg-кольца */
+.finger-ring .timer{
+  fill: var(--text, #0c1b1a); /* или var(--primary,#2563eb) — на твой вкус */
+  font-weight: 700;
+}
+
+/* цифры внутри svg-кольца */
+.finger-ring .timer{
+  fill: var(--text, #0c1b1a); /* или var(--primary,#2563eb) — на твой вкус */
+  font-weight: 700;
+}
+
+/* полностью скрыть внутренний таймер в svg-кольце */
+#fingerBtn .finger-ring .timer { display: none !important; }
+
+body.modal-open { overflow: hidden; }
+
+.modal[hidden]{ display:none !important; }
+.modal{ 
+  position:fixed; 
+  inset:0; 
+  z-index:9999;
+  display:grid; 
+  place-items:center; 
+  padding: 16px;
+ }
+.modal__backdrop{ position:absolute; inset:0; background:rgba(15,23,42,.45); backdrop-filter: blur(2px); }
+.modal__card{
+  position: relative; z-index: 1; width: min(640px, 92vw);
+  /* главное — ограничение высоты и прокрутка внутри */
+  max-height: calc(100dvh - 32px);       /* современный вьюпорт */
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;     /* плавный скролл в iOS/Telegram */
+  overscroll-behavior: contain;          /* чтобы фон не «подпрыгивал» */
+  touch-action: pan-y;                   /* позволяем вертикальный свайп */
+  background: #fff;
+  color: #111827;
+  border-radius: 18px;
+  padding: 20px 18px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.20);
+}
+ /* запасной вариант, если 100dvh не поддерживается */
+@supports not (height: 100dvh) {
+  .modal__card { max-height: calc(100vh - 32px); }
+}
+.modal__title{ font-size:20px; font-weight:700; margin-bottom:8px; }
+.modal__body{ line-height:1.55; }
+.modal__actions{ margin-top:14px; display:flex; justify-content:flex-end; }
+.about-btn{ font-weight:700; }
+
+/* скрыть placeholder-опцию в select возраста */
+#ageSelect option[disabled] { display: none; }
+
+
+.lang-btn {
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #f4f6fb;
+  border: none;
+  cursor: pointer;
+}
+.lang-btn:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
+
+body.modal-open { overflow: hidden; }
+
+/* скрываем строки, помеченные как скрытые для "Показать больше" */
+.table .hidden-row { 
+  display: none !important;   /* повышаем приоритет, чтобы перебить .table .tr */
+}
+
+.show-more-btn {
+  margin-top: 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #f4f6fb;
+  border: 1px solid #e3e7f2;
+  cursor: pointer;
+}
+.show-more-btn:hover { background: #eef2fb; }
+
+/* ===== Rainbow window glow (UTC 00:00 / 08:00 / 16:00) ===== */
+#hero {
+  position: relative;
+}
+
+/* Подложка-ореол с анимацией */
+#hero.rainbow-on::before {
+  content: "";
+  position: absolute;
+  inset: 0;                 /* по всему блоку-хиро */
+  border-radius: 24px;      /* как у панели сверху */
+  background: conic-gradient(
+    from 0deg,
+    #ff4d4d, #ff8a00, #ffd300, #4cd964, #32a3ff, #7a5cff, #ff2d55, #ff4d4d
+  );
+  filter: blur(18px);
+  opacity: 0.45;            /* прозрачный мягкий ореол */
+  z-index: 0;
+  animation: rainbow-spin 8s linear infinite;
+}
+
+/* Чтобы содержимое было над ореолом */
+#hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Плавное вращение конусного градиента */
+@keyframes rainbow-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ====== RAINBOW glow вокруг круга ====== */
+/* Обёртка вокруг круга (тот самый #hero) */
+#hero {
+  position: relative;          /* важно */
+  overflow: hidden;            /* чтобы не выходило за края карточки */
+}
+
+/* Слой радуги – рисуем ПОД содержимым */
+#hero.rainbow-on::before {
+  content: "";
+  position: absolute;
+  inset: -40px;                /* чуть выход за края, чтобы свечение было мягким */
+  z-index: 0;                  /* ниже всего */
+  pointer-events: none;        /* не перехватывает клики по кругу */
+  background: conic-gradient(
+    from 0deg,
+    #ff8a00, #ffd500, #7cf000, #00e0ff, #7c5cff, #ff41a6, #ff8a00
+  );
+  filter: blur(28px);
+  opacity: .55;
+  animation: rainbow-spin 8s linear infinite;
+  will-change: transform, filter;
+}
+
+/* Весь контент внутри #hero – поверх радуги */
+#hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Если «синяя полоска таймера» — отдельный элемент, подстрахуем */
+#hero .ring, 
+#hero .core, 
+#hero #circleTimer,
+#hero .progress,
+#hero .minuteCircle,
+#hero .fingerprint-wrap {
+  position: relative;
+  z-index: 2; /* точно поверх ::before */
+}
+
+/* По желанию — вырезаем отверстие в центре, чтобы центр круга 100% чистый */
+@supports (mask: radial-gradient(white, black)) or (-webkit-mask: radial-gradient(white, black)) {
+  #hero.rainbow-on::before {
+    /* «дырка» ~ радиуса вашего круга. Подберите проценты под ваш диаметр */
+    -webkit-mask: radial-gradient(transparent 35%, black 38%);
+            mask: radial-gradient(transparent 35%, black 38%);
+  }
+}
+
+@keyframes rainbow-spin {
+  to { transform: rotate(360deg); }
+}
+
+#remindBtn { display: none !important; }

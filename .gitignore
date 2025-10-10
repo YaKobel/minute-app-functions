@@ -1,0 +1,25 @@
+# зависимости
+node_modules/
+functions/node_modules/
+
+# окружение/секреты
+.env
+.env.local
+.env.*.local
+functions/.env
+
+# сборки/кэши/логи
+dist/
+build/
+.tmp/
+coverage/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+firebase-debug.log
+firebase-debug.*.log
+
+# IDE/OS
+.vscode/
+.DS_Store
+Thumbs.db

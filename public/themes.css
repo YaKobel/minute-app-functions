@@ -1,0 +1,167 @@
+/* ===== THEME TOKENS ===================================================== */
+/* A) Neo-Noir Green (тёмный, свечения) */
+:root.theme-a{
+  --bg:#0b0f10;
+  --panel:#111619;
+  --panel-2:#0e1316;
+  --text:#e8f6ef;
+  --muted:#93a39c;
+  --accent:#18e07f;
+  --accent-2:#0ecf6f;
+  --danger:#ff5a5f;
+  --shadow:0 10px 30px rgba(0,0,0,.45), 0 0 28px rgba(24,224,127,.12);
+  --glow:0 0 24px rgba(24,224,127,.35);
+  --border:1px solid rgba(255,255,255,.06);
+}
+
+/* B) Glass Dark (стекло/blur) */
+:root.theme-b{
+  --bg:#0a0c0e;
+  --panel:rgba(255,255,255,.06);
+  --panel-2:rgba(255,255,255,.08);
+  --text:#eef6f3;
+  --muted:#a2b0ac;
+  --accent:#4bf4c4;
+  --accent-2:#32d9ab;
+  --danger:#ff646e;
+  --shadow:0 10px 30px rgba(0,0,0,.55);
+  --glow:0 0 22px rgba(75,244,196,.28);
+  --border:1px solid rgba(255,255,255,.12);
+  --backdrop-blur: blur(12px);
+}
+
+/* C) Light Minimal (светлый) */
+:root.theme-c{
+  --bg:#f7f9fb;
+  --panel:#ffffff;
+  --panel-2:#f2f4f7;
+  --text:#0c1b1a;
+  --muted:#6b7673;
+  --accent:#10b981;
+  --accent-2:#059669;
+  --danger:#ef4444;
+  --shadow:0 8px 24px rgba(2,8,20,.06);
+  --glow:0 0 0 rgba(0,0,0,0);
+  --border:1px solid rgba(2,8,20,.06);
+}
+
+/* ===== RESET & LAYOUT =================================================== */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
+  color:var(--text); background:var(--bg);
+}
+.app{max-width:900px;margin:0 auto;padding:20px 16px 40px}
+
+/* ===== TOPBAR =========================================================== */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-radius:16px;background:var(--panel);
+  border:var(--border); box-shadow:var(--shadow);
+  position:sticky; top:10px; z-index:10;
+  backdrop-filter:var(--backdrop-blur, none);
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.2px}
+.brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:var(--glow)}
+.theme-switch{display:flex;gap:6px}
+.theme-switch a{
+  text-decoration:none;color:var(--muted);font-size:12px;padding:6px 8px;border-radius:10px;border:var(--border)
+}
+.theme-switch a.active{color:var(--text);background:var(--panel-2);box-shadow:var(--shadow)}
+
+/* ===== CARDS & TYPOGRAPHY ============================================== */
+.card{
+  background:var(--panel); border:var(--border); box-shadow:var(--shadow);
+  border-radius:18px; padding:16px 16px; margin:14px 0;
+  backdrop-filter:var(--backdrop-blur, none);
+}
+.h1{font-size:28px;font-weight:800;margin:6px 0 12px}
+.h2{font-size:18px;font-weight:700;margin:2px 0 10px;color:var(--muted)}
+
+/* ===== TIMER / PROGRESS ================================================ */
+.timer{
+  display:grid;place-items:center;gap:12px;padding:24px;border-radius:18px;
+  background:var(--panel-2); border:var(--border); box-shadow:var(--shadow);
+}
+.timer .big{
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size:48px; letter-spacing:.02em; color:var(--accent);
+  text-shadow:var(--glow);
+}
+
+/* ===== CTA buttons (4 намерения) ======================================= */
+.cta-grid{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:520px){.cta-grid{grid-template-columns:1fr 1fr}}
+.cta{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 14px;border-radius:16px;background:var(--panel);
+  border:var(--border); box-shadow:var(--shadow); cursor:pointer; user-select:none;
+  transition:.15s transform ease, .15s box-shadow ease; font-weight:600
+}
+.cta .left{display:flex;align-items:center;gap:12px}
+.cta .icon{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;
+  background:var(--panel-2); border:var(--border); box-shadow:var(--glow)}
+.cta:hover{transform:translateY(-1px); box-shadow:0 14px 34px rgba(0,0,0,.18), var(--glow)}
+.cta:active{transform:translateY(0)}
+.cta.disabled{opacity:.5;pointer-events:none}
+
+/* ===== Segmented control =============================================== */
+.segmented{
+  display:flex; gap:8px; background:var(--panel); border:var(--border); border-radius:14px;
+  padding:6px; box-shadow:var(--shadow); flex-wrap:wrap
+}
+.segmented button{
+  appearance:none;border:0;background:transparent;color:var(--muted);
+  padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:600
+}
+.segmented button.active{
+  color:var(--text); background:var(--panel-2); box-shadow:var(--glow)
+}
+
+/* ===== KPI line ========================================================= */
+.kpi{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 10px;margin:2px 0;border-radius:12px;background:var(--panel-2);
+  border:var(--border)
+}
+.kpi .left{display:flex;align-items:center;gap:10px}
+.kpi .left .badge{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;
+  background:var(--panel); border:var(--border)}
+.kpi .value{font-weight:800}
+
+/* ===== Table-like (топ стран) ========================================== */
+.table{
+  width:100%;border-collapse:separate;border-spacing:0 10px
+}
+.tr{display:grid;grid-template-columns:1fr 80px;gap:12px;align-items:center;margin:6px 0}
+.bar{
+  height:10px;border-radius:6px;background:var(--panel-2);border:var(--border);overflow:hidden
+}
+.bar > i{display:block;height:100%;background:var(--accent)}
+.country{color:var(--text)}
+.count{color:var(--muted);text-align:right}
+
+/* ===== FORM (profile) =================================================== */
+.form .row{display:grid;gap:10px;margin:10px 0}
+.form input, .form select{
+  width:100%;padding:12px 12px;border-radius:12px;border:var(--border);
+  background:var(--panel-2); color:var(--text); outline:none
+}
+.btn{
+  display:inline-flex;gap:10px;align-items:center;justify-content:center;
+  padding:12px 16px;border-radius:12px;border:var(--border);
+  background:var(--accent); color:#001e12; font-weight:800; cursor:pointer;
+  box-shadow:var(--glow); transition:.15s transform ease
+}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn.secondary{background:var(--panel-2); color:var(--text)}
+.note{color:var(--muted);font-size:12px}
+
+/* — Доп. полиш для Light (theme-c) — */
+:root.theme-c .h1 { letter-spacing: .2px }
+:root.theme-c .timer .big { text-shadow: none }
+:root.theme-c .cta:hover { box-shadow: 0 8px 20px rgba(2,8,20,.08) }
+:root.theme-c .form input,
+:root.theme-c .form select { background: #fff }
