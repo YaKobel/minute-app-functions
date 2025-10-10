@@ -256,23 +256,6 @@ app.post('/api/remind', requireKey, async (req, res) => {
 });
 
 
-// Вкл/выкл напоминаний для текущего userId
-app.post('/api/remind', requireKey, async (req, res) => {
-  try {
-    const { userId, on } = req.body || {};
-    if (!userId) {
-      return res.status(400).json({ ok: false, error: 'userId-required' });
-    }
-    await db.collection('subs').doc(String(userId)).set(
-      { on: !!on }, // просто запоминаем флаг
-      { merge: true }
-    );
-    return res.json({ ok: true });
-  } catch (e) {
-    console.error('remind-save-error:', e);
-    return res.status(500).json({ ok: false });
-  }
-});
 
 
 
@@ -701,26 +684,29 @@ bot.on('callback_query', async (query) => {
 }
 
 // WebApp → sendData: переключение колокольчика и пр.
-bot.on('message', async (msg) => {
-  try {
-    const chatId = msg.chat?.id;
-    const dataStr = msg.web_app_data?.data;
-    if (!chatId || !dataStr) return;
-    let payload = {};
-    try { payload = JSON.parse(dataStr); } catch { return; }
+if (bot) {
+  bot.on('message', async (msg) => {
+    try {
+      const chatId = msg.chat?.id;
+      const dataStr = msg.web_app_data?.data;
+      if (!chatId || !dataStr) return;
 
-    // Колокольчик
-    if (payload.type === 'reminder:toggle') {
-      const on = await toggleReminders(chatId);
-      await bot.sendMessage(chatId, on
-        ? '🔔 Напоминания включены.\n' + buildNextWindowLine()
-        : '🔕 Напоминания выключены.');
-      return;
+      let payload = {};
+      try { payload = JSON.parse(dataStr); } catch { return; }
+
+      if (payload.type === 'reminder:toggle') {
+        const on = await toggleReminders(chatId);
+        await bot.sendMessage(
+          chatId,
+          on ? '🔔 Напоминания включены.\n' + buildNextWindowLine()
+             : '🔕 Напоминания выключены.'
+        );
+      }
+    } catch (e) {
+      console.error('web_app_data error:', e.message);
     }
-  } catch (e) {
-    console.error('web_app_data error:', e.message);
-  }
-});
+  });
+}
 
 
 // ——— авто-перелив отложенных заявок в голоса (включается DEFER_LOOP=1) ———
