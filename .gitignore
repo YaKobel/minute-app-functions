@@ -25,3 +25,9 @@ firebase-debug.*.log
 Thumbs.db
 serviceAccountKey.json
 .env
+.env
+serviceAccountKey.json
+node_modules/
+.env
+serviceAccountKey.json
+node_modules/
