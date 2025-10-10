@@ -36,7 +36,7 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-App-Key': APP_KEY                // ← ИСПОЛЬЗУЕМ ПЕРЕМЕННУЮ
+            'X-App-Key': API_KEY                // ← ИСПОЛЬЗУЕМ ПЕРЕМЕННУЮ
           },
           body: JSON.stringify(payload)
         });
