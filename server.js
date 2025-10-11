@@ -565,132 +565,93 @@ if (bot) {
     }
   });
 
-// обработка нажатий
-bot.on('callback_query', async (query) => {
-  try {
-    const chatId = query?.message?.chat?.id;
-    const data   = query?.data || '';
-    if (!chatId) return;
+  // обработка нажатий
+  bot.on('callback_query', async (query) => {
+    try {
+      const chatId = query?.message?.chat?.id;
+      const data   = query?.data || '';
+      if (!chatId) return;
 
-    // 🔔 подписка на напоминания
-    if (data === 'remind:toggle') {
-      const on = await toggleReminders(chatId);
-      const status = on ? 'включены' : 'выключены';
-      await bot.answerCallbackQuery(query.id, { text: `Напоминания ${status}`, show_alert: false });
-      await bot.sendMessage(chatId, buildNextWindowLine());
-      return;
-    }
+      // 🔔 подписка на напоминания
+      if (data === 'remind:toggle') {
+        const on = await toggleReminders(chatId);
+        const status = on ? 'включены' : 'выключены';
+        await bot.answerCallbackQuery(query.id, { text: `Напоминания ${status}`, show_alert: false });
+        await bot.sendMessage(chatId, buildNextWindowLine());
+        return;
+      }
 
-    // ℹ️ «О проекте» (если нет WEBAPP_URL)
-    if (data === 'about:text') {
-      await bot.answerCallbackQuery(query.id);
-      await bot.sendMessage(
-        chatId,
-        'MINUTE — это короткая коллективная минута внимания три раза в день.\n' +
-        'Окна: 00:00 / 08:00 / 16:00 по UTC. Выберите намерение и отмечайтесь.',
-      );
-      return;
-    }
+      // ℹ️ «О проекте» (если нет WEBAPP_URL)
+      if (data === 'about:text') {
+        await bot.answerCallbackQuery(query.id);
+        await bot.sendMessage(
+          chatId,
+          'MINUTE — это короткая коллективная минута внимания три раза в день.\n' +
+          'Окна: 00:00 / 08:00 / 16:00 по UTC. Выберите намерение и отмечайтесь.',
+        );
+        return;
+      }
 
-    // Голос из ТГ
-    if (data.startsWith('vote:')) {
-      const category = data.split(':')[1]; // war|climate|personal|family
-      const ok = ['war','climate','personal','family'].includes(category);
-      if (!ok) return;
+      // Голос из ТГ
+      if (data.startsWith('vote:')) {
+        const category = data.split(':')[1]; // war|climate|personal|family
+        const ok = ['war','climate','personal','family'].includes(category);
+        if (!ok) return;
 
-      // профиль (country/region/gender/ageGroup/lang)
-      const prof    = await readUserProfile(chatId);
-      // Обязательное наличие страны: без профиля голос не принимаем
-      if (!prof?.country) {
-        // WebApp
-        if (res) {
-          return res.status(400).json({ ok: false, error: 'profile-required' });
-        }
-        // Telegram — вежливо подсказываем открыть веб-приложение и заполнить профиль
-        if (bot && chatId) {
+        // профиль (country/region/gender/ageGroup/lang)
+        const prof = await readUserProfile(chatId);
+        if (!prof?.country) {
           await bot.sendMessage(
             chatId,
             'Пожалуйста, заполните профиль (страна/регион/пол/возраст), после чего голос будет засчитываться.',
-            {
-              reply_markup: {
-                inline_keyboard: [[{ text: 'Открыть профиль', web_app: { url: `${PUBLIC_BASE}/profile.html` } }]],
-              },
-            }
+            { reply_markup: { inline_keyboard: [[{ text: 'Открыть профиль', web_app: { url: `${PUBLIC_BASE}/profile.html` } }]] } }
           );
+          return;
         }
-        return;
+
+        const country = prof.country;
+        const region  = prof.region  ?? null;
+        const gender  = prof.gender  ?? null;
+        const ageGroup= prof.ageGroup?? null;
+        const lang    = prof.lang    ?? null;
+
+        // ограничитель кликов (1 — live; 2 — defer; 3+ — block)
+        const lim = await limitTgClicks(chatId);
+
+        if (lim.action === 'live') {
+          await bot.answerCallbackQuery(query.id, { text: 'Минута запущена ⏱️', show_alert: false });
+          await startMinuteCountdown(bot, chatId);
+          setTimeout(async () => {
+            try {
+              await db.collection('votes').add({
+                userId: String(chatId), category, country, region, gender, ageGroup, lang,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+              });
+            } catch (e) { console.error('save live vote error:', e.message); }
+          }, 61_000);
+
+        } else if (lim.action === 'defer') {
+          const ts = lim.targetTs;
+          await bot.answerCallbackQuery(query.id, { text: `Голос запланирован на ближайшее окно: ${fmtUtc(ts)}`, show_alert: true });
+          await db.collection('entries').add({
+            type: 'defer', userId: String(chatId), category, country, region, gender, ageGroup, lang,
+            applyAt: admin.firestore.Timestamp.fromMillis(ts),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+
+        } else {
+          await bot.answerCallbackQuery(query.id, { text: 'В этом окне уже 2 отметки. Попробуйте в следующем окне.', show_alert: true });
+        }
       }
-     
-      const country = prof.country;
-      const region  = prof.region  ?? null;
-      const gender  = prof.gender  ?? null;
-      const age     = prof.ageGroup?? null;
-
-      // ограничитель кликов (1 — live; 2 — defer; 3+ — block)
-      const lim = await limitTgClicks(chatId);
-
-      if (lim.action === 'live') {
-        // 1-й клик — запускаем минуту; голос пишем после минуты
-        await bot.answerCallbackQuery(query.id, { text: 'Минута запущена ⏱️', show_alert: false });
-        await startMinuteCountdown(bot, chatId);
-
-        setTimeout(async () => {
-          try {
-            await db.collection('votes').add({
-              userId: String(chatId),
-              category,
-              country,
-              region,
-              gender,
-              ageGroup,
-              lang,
-              createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
-          } catch (e) {
-            console.error('save live vote (after minute) error:', e.message);
-          }
-        }, 61_000);
-
-      } else if (lim.action === 'defer') {
-        // 2-й клик — планируем на ближайшее окно
-        const ts = lim.targetTs;
-        await bot.answerCallbackQuery(query.id, {
-          text: `Голос запланирован на ближайшее окно: ${fmtUtc(ts)}`,
-          show_alert: true,
-        });
-        await db.collection('entries').add({
-          type: 'defer',
-          userId: String(chatId),
-          category,
-          country,
-          region,
-          gender,
-          ageGroup,
-          lang,
-          applyAt: admin.firestore.Timestamp.fromMillis(ts),
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-
-      } else {
-        // 3-й и далее — блок
-        await bot.answerCallbackQuery(query.id, {
-          text: 'В этом окне вы уже отметились 2 раза. Попробуйте в следующем окне.',
-          show_alert: true,
-        });
-      }
+    } catch (e) {
+      console.error('callback_query error:', e.message);
+      try { await bot.answerCallbackQuery(query.id, { text: 'Ошибка. Попробуйте ещё раз', show_alert: true }); } catch {}
     }
-  } catch (e) {
-    console.error('callback_query error:', e.message);
-    try {
-      await bot.answerCallbackQuery(query.id, { text: 'Ошибка. Попробуйте ещё раз', show_alert: true });
-    } catch {}
-  }
-});
-
-  
+  });
 } else {
   console.warn('⚠️ Бот не инициализирован — обработчики Telegram отключены.');
 }
+
 
 // WebApp → sendData: переключение колокольчика и пр.
 if (bot) {
