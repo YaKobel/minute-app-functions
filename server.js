@@ -16,37 +16,42 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ---------- Firebase Admin ----------
+// ---------- Firebase Admin ----------
 (function initFirebase() {
   try {
     if (admin.apps.length) return;
 
-    const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
-    const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
+    const raw = process.env.FIREBASE_SERVICE_ACCOUNT || '';
+    const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_B64 || '';
 
-    if (raw || b64) {
-      const json = JSON.parse(raw || Buffer.from(b64, 'base64').toString('utf8'));
-      admin.initializeApp({
-        credential: admin.credential.cert(json),
-        projectId: json.project_id,
-      });
-      console.log(`🔐 Firebase Admin инициализирован из ENV JSON (projectId: ${json.project_id})`);
-      return;
+    if (!raw && !b64) {
+      if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+        admin.initializeApp({ credential: admin.credential.applicationDefault() });
+        console.log('🔐 Firebase Admin: GOOGLE_APPLICATION_CREDENTIALS');
+        return;
+      }
+      throw new Error('Нет сервис-аккаунта. Укажи FIREBASE_SERVICE_ACCOUNT или FIREBASE_SERVICE_ACCOUNT_B64');
     }
 
-    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-      admin.initializeApp({ credential: admin.credential.applicationDefault() });
-      console.log('🔐 Firebase Admin инициализирован из GOOGLE_APPLICATION_CREDENTIALS');
-      return;
+    const jsonStr = raw || Buffer.from(b64, 'base64').toString('utf8');
+    const sa = JSON.parse(jsonStr);
+
+    if (sa.private_key) {
+      // превращаем литералы \n в реальные переводы строки
+      sa.private_key = sa.private_key.replace(/\\n/g, '\n');
     }
 
-    throw new Error(
-      'Нет сервис-аккаунта. Добавь FIREBASE_SERVICE_ACCOUNT или FIREBASE_SERVICE_ACCOUNT_B64 в .env',
-    );
+    admin.initializeApp({
+      credential: admin.credential.cert(sa),
+      projectId: sa.project_id,
+    });
+    console.log(`🔐 Firebase Admin OK (projectId: ${sa.project_id})`);
   } catch (e) {
     console.error('Firebase init error:', e);
     process.exit(1);
   }
 })();
+
 const db = admin.firestore();
 
 // ---------- Конфиг ----------
