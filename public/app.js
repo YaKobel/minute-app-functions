@@ -40,6 +40,15 @@
           },
           body: JSON.stringify(payload)
         });
+		
+		if (!resp.ok) {
+          let errMsg = 'vote_failed';
+          try {
+            const j = await resp.json();
+            if (j && j.message) errMsg = j.message;
+          } catch (_) {}
+          throw new Error(errMsg);
+        }
   
         const data = await resp.json();
         if (!resp.ok || !data?.ok) throw new Error(data?.error || 'vote_failed');
