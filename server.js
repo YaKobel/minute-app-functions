@@ -349,6 +349,11 @@ app.post('/api/vote', requireKey, async (req, res) => {
     if (!userId || !category) {
       return res.status(400).json({ error: 'bad_request' });
     }
+	// 🟩 Защита: нельзя голосовать без профиля
+     const { category, country, region, lang, gender, ageGroup } = req.body || {};
+     if (!category || !country || !region || !lang || !gender || !ageGroup) {
+       return res.status(403).json({ ok: false, message: 'profile_required' });
+     }
 
     // 1) Берём профиль из Firestore
     const userDoc = await db.collection('users').doc(String(userId)).get();

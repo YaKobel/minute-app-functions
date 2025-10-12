@@ -965,7 +965,18 @@ intentBtns.forEach(btn => {
   // ---- Клик по «пальцу»: поведение зависит от режима
   startBtn.addEventListener('click', () => {
     if (!selectedIntent) { showToast('minute.choose'); return; }
-
+	// 🟩 Проверка профиля перед запуском
+    const p = (typeof getStoredProfile === 'function' ? getStoredProfile() : {}) || {};
+    const hasProfile = p.country && p.region && p.lang && p.gender && p.ageGroup;
+    if (!hasProfile) {
+      showToast('Сначала заполните профиль (страна, регион, язык, пол, возраст).');
+      try {
+        const base = location.origin || (window.PUBLIC_BASE || '');
+        window.Telegram?.WebApp?.openLink?.(`${base}/index.html?screen=profile`);
+      } catch {}
+      return;
+    }
+ 
 
    const ts = nextUtcWindowTs();
    if (MODE === 'live') {
