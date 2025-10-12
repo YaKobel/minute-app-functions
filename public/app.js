@@ -8,39 +8,85 @@
   let minuteTimer = null;
   let minuteLeft = 60;
 
-  // Профиль обязателен: голосуем только после заполнения
-  const profile = getStoredProfile() || {};
-  const miss = [];
-  if (!profile.country)   miss.push('страна');
-  if (!profile.region)    miss.push('регион');
-  if (!profile.lang)      miss.push('язык');
-  if (!profile.gender)    miss.push('пол');
-  if (!profile.ageGroup)  miss.push('возраст');
+// Обработчик голосования (веб): голосуем ТОЛЬКО при заполненном профиле
+document.querySelectorAll('.cta[data-vote]').forEach((btn) => {
+  btn.addEventListener('click', async () => {
+    const category = (btn.getAttribute('data-vote') || '').toLowerCase();
+    if (!['war', 'climate', 'personal', 'family'].includes(category)) return;
 
-  if (miss.length) {
-    alert('Сначала заполните профиль: ' + miss.join(', '));
-    // если открыто внутри Telegram — аккуратно ведём на экран профиля
+    // подсветка выбора (не обязательно)
+    btn.classList.add('selected');
+
+    // читаем профиль из localStorage
+    const profile = getStoredProfile() || {};
+    const miss = [];
+    if (!profile.country)   miss.push('страна');
+    if (!profile.region)    miss.push('регион');
+    if (!profile.lang)      miss.push('язык');
+    if (!profile.gender)    miss.push('пол');
+    if (!profile.ageGroup)  miss.push('возраст');
+
+    // если чего-то не хватает — не отправляем голос
+    if (miss.length) {
+      alert('Сначала заполните профиль: ' + miss.join(', '));
+
+      // если открыто внутри Telegram WebApp — можно открыть экран профиля
+      try {
+        const base = location.origin || (window.PUBLIC_BASE || '');
+        window.Telegram?.WebApp?.openLink?.(`${base}/index.html?screen=profile`);
+      } catch (_) {}
+
+      btn.classList.remove('selected');
+      return;
+    }
+
+    // формируем payload БЕЗ дефолтов
+    const payload = {
+      category,
+      country: String(profile.country).toUpperCase(), // никаких "|| 'UA'"
+      region:  String(profile.region),                // никаких "|| 'center'"
+      lang:    String(profile.lang),                  // никаких "|| getLang()"
+      gender:  profile.gender,
+      ageGroup: profile.ageGroup,
+
+      // тех.поля (по желанию)
+      userId:  detectUserId(),
+      chatId:  detectUserId(),
+    };
+
     try {
-      const base = location.origin || (window.PUBLIC_BASE || '');
-      window.Telegram?.WebApp?.openLink?.(`${base}/index.html?screen=profile`);
-    } catch (_) {}
-    btn.classList.remove('selected');
-    return;
-  }
+      const resp = await fetch('/api/vote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-App-Key': (window.APP_KEY || ''), // важен заголовок
+        },
+        body: JSON.stringify(payload),
+      });
 
-  // Без дефолтов! Берём только то, что реально указал пользователь
-  const payload = {
-    category,
-    country: String(profile.country).toUpperCase(), // удалили "|| 'UA'"
-    region:  String(profile.region),                 // удалили "|| 'center'"
-    lang:    String(profile.lang),                   // удалили "|| getLang()"
-    gender:  profile.gender,
-    ageGroup: profile.ageGroup,
+      // читаем ответ, показываем понятную ошибку
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || !data?.ok) {
+        const msg = data?.message || data?.error || 'Ошибка отправки';
+        throw new Error(msg);
+      }
 
-    // тех.поля (по желанию)
-    userId: detectUserId(),
-    chatId: detectUserId()
-  };
+      // короткая галочка что всё ок
+      btn.classList.add('neon-ok');
+      setTimeout(() => btn.classList.remove('neon-ok'), 1200);
+
+      // если открыт экран статистики — можно обновить
+      if (location.search.includes('screen=stats') && typeof loadStats === 'function') {
+        try { await loadStats(); } catch {}
+      }
+    } catch (e) {
+      alert(String(e.message || e));
+      console.error('vote error:', e);
+    } finally {
+      btn.classList.remove('selected');
+    }
+  }, { passive: true });
+});
 
 
   function startMinute(clockEl) {
