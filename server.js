@@ -345,92 +345,53 @@ async function limitTgClicks(chatId) {
 // голос
 app.post('/api/vote', requireKey, async (req, res) => {
   try {
-    // 1) Валидация входа
     const body = req.body || {};
-    const cat = String(body.category || '').toLowerCase();
+
+    // 1) валидируем категорию
+    const category = String(body.category || '').toLowerCase();
     const allowed = new Set(['war', 'climate', 'personal', 'family']);
-    if (!allowed.has(cat)) {
+    if (!allowed.has(category)) {
       return res.status(400).json({ ok: false, message: 'invalid_category' });
     }
 
-    const userId  = String(body.userId ?? '').trim();
-    const country = String(body.country ?? '').trim().toUpperCase();
-    const region  = String(body.region  ?? '').trim();
-    const lang    = String(body.lang    ?? '').trim();
-    const gender  = String(body.gender  ?? '').trim();
-    const age     = String(body.ageGroup?? '').trim();
+    // 2) валидируем профиль (никаких дефолтов!)
+    const userId   = String(body.userId   ?? '').trim();
+    const country  = String(body.country  ?? '').trim().toUpperCase();
+    const region   = String(body.region   ?? '').trim();
+    const lang     = String(body.lang     ?? '').trim();
+    const gender   = String(body.gender   ?? '').trim();
+    const ageGroup = String(body.ageGroup ?? '').trim();
 
-    // Профиль обязателен: ничего не подставляем по умолчанию
     const missing = [];
     if (!country || country === 'XX') missing.push('country');
     if (!region)  missing.push('region');
     if (!lang)    missing.push('lang');
     if (!gender)  missing.push('gender');
-    if (!age)     missing.push('ageGroup');
+    if (!ageGroup) missing.push('ageGroup');
+
     if (missing.length) {
       return res.status(400).json({ ok: false, message: 'profile_required', missing });
     }
 
-    // 2) Запись
+    // 3) пишем голос
     await db.collection('votes').add({
       userId,
-      category: cat,
+      category,
       country,
       region,
       lang,
       gender,
-      ageGroup: age,
+      ageGroup,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    res.json({ ok: true });
+    return res.json({ ok: true });
   } catch (e) {
     console.error('/api/vote error:', e);
-    res.status(500).json({ ok: false, error: 'server' });
-  }
-	
-    const cat = String(category || '').toLowerCase();
-    if (!['war', 'climate', 'personal', 'family'].includes(cat)) {
-      return res.status(400).json({ ok: false, error: 'bad category' });
-    }
-    const user = userId ? String(userId) : null;
-
-    let countryCode = (String(country || '')).toUpperCase().slice(0, 2);
-    let reg = region || null;
-    let gen = gender || null;
-    let ag = ageGroup || null;
-
-    // подтянем профиль, если не хватает
-    if (user) {
-      try {
-        const doc = await db.collection('users').doc(user).get();
-        if (doc.exists) {
-          const u = doc.data() || {};
-          if (!countryCode && u.country) countryCode = String(u.country).toUpperCase();
-          if (!reg && u.region) reg = u.region;
-          if (!gen && u.gender) gen = u.gender;
-          if (!ag && u.ageGroup) ag = u.ageGroup;
-        }
-      } catch {}
-    }
-
-    await db.collection('votes').add({
-      userId: user,
-      category: cat,
-      country: countryCode || 'XX',
-      region: reg,
-      gender: gen,
-      ageGroup: ag,
-      lang: lang || null,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
-    res.json({ ok: true });
-  } catch (e) {
-    console.error('/api/vote error:', e);
-    res.status(500).json({ ok: false, error: 'server' });
+    return res.status(500).json({ ok: false, error: 'server' });
   }
 });
+
 
 // статистика (категории, страны, регионы, пол, возрастные корзины)
 app.get('/api/stats', requireKey, async (req, res) => {
