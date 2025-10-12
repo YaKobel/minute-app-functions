@@ -8,65 +8,40 @@
   let minuteTimer = null;
   let minuteLeft = 60;
 
-  document.querySelectorAll('.cta[data-vote]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      const category = (btn.getAttribute('data-vote') || '').toLowerCase();
-      if (!['war', 'climate', 'personal', 'family'].includes(category)) return;
-  
-      // необязательная анимация/подсветка выбора
-      btn.classList.add('selected');
-  
-      // профиль для метаданных
-      const profile = getStoredProfile() || {};
-      const payload = {
-        category,                                 // ← сервер ждёт "category"
-        country: (profile.country || 'UA').toUpperCase(),
-        region:  (profile.region  || 'center'),
-        lang:    (profile.lang    || getLang()),
-        gender:  profile.gender  || null,
-        ageGroup: profile.ageGroup || null,
-  
-        // тех. поля (по желанию; на сервере можно игнорить)
-        userId:  detectUserId(),
-        chatId:  detectUserId()
-      };
-  
-      try {
-        const resp = await fetch('/api/vote', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-App-Key': API_KEY                // ← ИСПОЛЬЗУЕМ ПЕРЕМЕННУЮ
-          },
-          body: JSON.stringify(payload)
-        });
-		
-		if (!resp.ok) {
-          let errMsg = 'vote_failed';
-          try {
-            const j = await resp.json();
-            if (j && j.message) errMsg = j.message;
-          } catch (_) {}
-          throw new Error(errMsg);
-        }
-  
-        const data = await resp.json();
-        if (!resp.ok || !data?.ok) throw new Error(data?.error || 'vote_failed');
-  
-        // короткая «галочка» что всё ок
-        btn.classList.add('neon-ok');
-        setTimeout(() => btn.classList.remove('neon-ok'), 1200);
-  
-        // по желанию — обнови статистику на странице, если она открыта
-        if (location.pathname.includes('stats')) {
-          try { await loadStats?.(); } catch(_) {}
-        }
-      } catch (e) {
-        alert('Ошибка отправки. Проверьте соединение.');
-        console.error('vote error:', e);
-      }
-    }, { passive: true });
-  });
+  // Профиль обязателен: голосуем только после заполнения
+  const profile = getStoredProfile() || {};
+  const miss = [];
+  if (!profile.country)   miss.push('страна');
+  if (!profile.region)    miss.push('регион');
+  if (!profile.lang)      miss.push('язык');
+  if (!profile.gender)    miss.push('пол');
+  if (!profile.ageGroup)  miss.push('возраст');
+
+  if (miss.length) {
+    alert('Сначала заполните профиль: ' + miss.join(', '));
+    // если открыто внутри Telegram — аккуратно ведём на экран профиля
+    try {
+      const base = location.origin || (window.PUBLIC_BASE || '');
+      window.Telegram?.WebApp?.openLink?.(`${base}/index.html?screen=profile`);
+    } catch (_) {}
+    btn.classList.remove('selected');
+    return;
+  }
+
+  // Без дефолтов! Берём только то, что реально указал пользователь
+  const payload = {
+    category,
+    country: String(profile.country).toUpperCase(), // удалили "|| 'UA'"
+    region:  String(profile.region),                 // удалили "|| 'center'"
+    lang:    String(profile.lang),                   // удалили "|| getLang()"
+    gender:  profile.gender,
+    ageGroup: profile.ageGroup,
+
+    // тех.поля (по желанию)
+    userId: detectUserId(),
+    chatId: detectUserId()
+  };
+
 
   function startMinute(clockEl) {
     clearInterval(minuteTimer);
