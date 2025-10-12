@@ -135,10 +135,22 @@ document.querySelectorAll('.cta[data-vote]').forEach((btn) => {
   }
   function getLang() { return localStorage.getItem('minute.lang') || 'ru'; }
   function detectUserId() {
-    try { const tg = window.Telegram?.WebApp; const id = tg?.initDataUnsafe?.user?.id; if (id) return id; } catch {}
+    // 1) если открыт внутри Telegram WebApp — берём tg user.id
+    try {
+      const tg = window.Telegram?.WebApp;
+      const id = tg?.initDataUnsafe?.user?.id;
+      if (id) return String(id);
+    } catch {}
+    // 2) если явно передан в URL
     const q = new URLSearchParams(location.search).get('user_id');
-    if (q && /^\d+$/.test(q)) return Number(q);
-    return 566405905;
+    if (q && /^\d+$/.test(q)) return String(q);
+    // 3) персональный uid для этого браузера
+    let uid = localStorage.getItem('uid');
+    if (!uid) {
+      uid = 'web-' + Math.random().toString(36).slice(2, 10);
+      localStorage.setItem('uid', uid);
+    }
+    return uid;
   }
   async function safeJson(resp) { const t = await resp.text(); try { return JSON.parse(t); } catch { return null; } }
 })();

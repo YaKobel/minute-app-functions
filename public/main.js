@@ -568,11 +568,16 @@ function detectUserId() {
   try {
     const tg = window.Telegram?.WebApp;
     const id = tg?.initDataUnsafe?.user?.id;
-    if (id) return id;
+    if (id) return String(id);
   } catch {}
   const q = new URLSearchParams(location.search).get('user_id');
-  if (q && /^\d+$/.test(q)) return Number(q);
-  return 566405905;  // fallback для локальных тестов
+  if (q && /^\d+$/.test(q)) return String(q);
+  let uid = localStorage.getItem('uid');
+  if (!uid) {
+    uid = 'web-' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('uid', uid);
+  }
+  return uid;
 }
 
 function getStoredProfile() {
@@ -628,14 +633,23 @@ async function sendVoteAfterMinute(category, profile) {
   // шлём ровно через минуту (чтобы выглядело «после минуты»)
   setTimeout(async () => {
     try {
+	  444
+      // 1) Жёсткая проверка профиля на клиенте
+      const p = profile || {};
+      const hasProfile = p.country && p.region && p.lang && p.gender && p.ageGroup;
+      if (!hasProfile) {
+        showToast('Сначала заполните профиль (страна, регион, язык, пол, возраст).');
+        return;
+      }
+      // 2) Собираем payload без дефолтов 'XX'
       const payload = {
         userId: detectUserId?.() || 'web',
         category,
-        country: (profile?.country || 'XX').toUpperCase(),
-        region : profile?.region || null,
-        gender : profile?.gender || null,
-        ageGroup: profile?.ageGroup || null,
-        lang   : profile?.lang || getLang?.() || 'ru',
+        country: String(p.country).toUpperCase(),
+        region : p.region,
+        gender : p.gender,
+        ageGroup: p.ageGroup,
+        lang   : p.lang || getLang?.() || 'ru',
         mode   : 'live',
         at     : Date.now()
       };
@@ -647,8 +661,15 @@ async function sendVoteAfterMinute(category, profile) {
         },
         body: JSON.stringify(payload)
       });
-      // можно не парсить: отправили — и хорошо
-      await resp.text().catch(() => {});
+      // 3) Учитываем ответ сервера — тост только при ok:true
+      let data = null;
+      try { data = await resp.json(); } catch {}
+      if (!resp.ok || !data?.ok) {
+        const msg = data?.message || data?.error || 'Ошибка отправки';
+        showToast(msg);
+        return;
+      }
+      showToast('Голос засчитан: ' + category);
     } catch (e) {
       console.error('vote err', e);
     }
@@ -932,33 +953,9 @@ intentBtns.forEach(btn => {
       if (left <= 0) {
         clearInterval(ticker); ticker = null;
         startBtn.classList.remove('finger-running');
-		// Готовим payload так, как ждёт сервер
-        const payload = {
-          userId:   detectUserId(),   // локальный/телеграм id — как у тебя уже было
-          category: intent,           // ВАЖНО: сервер ждёт 'category', НЕ 'intent'
-          lang:     getLang()
-        };
-        // Подмешаем, если в локальном профиле что-то сохранено
-        try {
-          const p = (typeof getStoredProfile === 'function' ? getStoredProfile() : {}) || {};
-          if (p.country)  payload.country  = p.country;
-          if (p.region)   payload.region   = p.region;
-          if (p.gender)   payload.gender   = p.gender;     // 'male' | 'female'
-          if (p.ageGroup) payload.ageGroup = p.ageGroup;   // '-14','15-20',...,'93+'
-        } catch { /* пусто */ }
-        // Отправляем голос
-        fetch('/api/vote', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-App-Key': APP_KEY
-          },
-          body: JSON.stringify(payload)
-        }).catch(() => {});
-	   
-        try { Telegram?.WebApp?.sendData(JSON.stringify({type:'vote', intent, mode: MODE})); 
-		} catch {}
-        showToast('Голос засчитан: ' + intent);
+        // Голос отправляет sendVoteAfterMinute (для LIVE), а для DEFER — отложенная логика.
+        try { Telegram?.WebApp?.sendData(JSON.stringify({type:'minute:end', intent, mode: MODE})); } catch {}
+        showToast('Минута завершена');
       }
     };
     tick();
