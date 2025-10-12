@@ -808,6 +808,18 @@ app.post('/api/admin/reset-demo', requireKey, async (req, res) => {
   }
 });
 
+// === KeepAlive для Render (чтобы сервер не засыпал) ===
+if (process.env.KEEPALIVE === '1' && PUBLIC_BASE) {
+    console.log('🟢 KEEPALIVE активен: пингуем каждые 50 минут →', PUBLIC_BASE);
+    const ping = () => {
+        fetch(`${PUBLIC_BASE}/healthz`)
+            .then(() => console.log('🕐 keepalive ping OK'))
+            .catch(() => console.warn('⚠️ keepalive ping failed'));
+    };
+    setInterval(ping, 50 * 60 * 1000); // каждые 50 минут
+    ping(); // первый вызов сразу
+}
+
 
 // ---------- Запуск ----------
 app.listen(PORT, () => {
