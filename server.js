@@ -203,7 +203,7 @@ app.get('/api/status', (_req, res) => {
 
 // простой healthcheck
 app.get('/healthz', (req, res) => {
-  res.type('text').send('ok');
+  res.send('ok');
 });
 
 
