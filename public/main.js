@@ -633,7 +633,6 @@ async function sendVoteAfterMinute(category, profile) {
   // шлём ровно через минуту (чтобы выглядело «после минуты»)
   setTimeout(async () => {
     try {
-	  444
       // 1) Жёсткая проверка профиля на клиенте
       const p = profile || {};
       const hasProfile = p.country && p.region && p.lang && p.gender && p.ageGroup;

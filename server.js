@@ -345,35 +345,49 @@ async function limitTgClicks(chatId) {
 // голос
 app.post('/api/vote', requireKey, async (req, res) => {
   try {
-    const { userId, category, country, region, lang, gender, ageGroup } = req.body || {};
-    if (!userId || !category) {
-      return res.status(400).json({ error: 'bad_request' });
+    // 1) Валидация входа
+    const body = req.body || {};
+    const cat = String(body.category || '').toLowerCase();
+    const allowed = new Set(['war', 'climate', 'personal', 'family']);
+    if (!allowed.has(cat)) {
+      return res.status(400).json({ ok: false, message: 'invalid_category' });
     }
-	// 🟩 Защита: нельзя голосовать без профиля
-     const { category, country, region, lang, gender, ageGroup } = req.body || {};
-     if (!category || !country || !region || !lang || !gender || !ageGroup) {
-       return res.status(403).json({ ok: false, message: 'profile_required' });
-     }
 
-    // 1) Берём профиль из Firestore
-    const userDoc = await db.collection('users').doc(String(userId)).get();
-    const profile = userDoc.exists ? userDoc.data() : null;
+    const userId  = String(body.userId ?? '').trim();
+    const country = String(body.country ?? '').trim().toUpperCase();
+    const region  = String(body.region  ?? '').trim();
+    const lang    = String(body.lang    ?? '').trim();
+    const gender  = String(body.gender  ?? '').trim();
+    const age     = String(body.ageGroup?? '').trim();
 
-    // 2) Проверяем заполненность
-    const incomplete =
-      !profile ||
-      !profile.country || profile.country === 'XX' ||
-      !profile.region  ||
-      !profile.lang    ||
-      !profile.gender  ||
-      !profile.ageGroup;
-
-    if (incomplete) {
-      return res.status(403).json({
-        error: 'profile_required',
-        message: 'Сначала заполните профиль (страна, регион, язык, пол и возраст), затем голосуйте.'
-      });
+    // Профиль обязателен: ничего не подставляем по умолчанию
+    const missing = [];
+    if (!country || country === 'XX') missing.push('country');
+    if (!region)  missing.push('region');
+    if (!lang)    missing.push('lang');
+    if (!gender)  missing.push('gender');
+    if (!age)     missing.push('ageGroup');
+    if (missing.length) {
+      return res.status(400).json({ ok: false, message: 'profile_required', missing });
     }
+
+    // 2) Запись
+    await db.collection('votes').add({
+      userId,
+      category: cat,
+      country,
+      region,
+      lang,
+      gender,
+      ageGroup: age,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('/api/vote error:', e);
+    res.status(500).json({ ok: false, error: 'server' });
+  }
 	
     const cat = String(category || '').toLowerCase();
     if (!['war', 'climate', 'personal', 'family'].includes(cat)) {
