@@ -63,6 +63,7 @@ const WEBAPP_URL =
   process.env.TG_WEBAPP_URL || (PUBLIC_BASE ? `${PUBLIC_BASE}/index.html` : '');
 const WEBHOOK_URL =
   process.env.WEBHOOK_URL || (PUBLIC_BASE ? `${PUBLIC_BASE}/telegram/webhook` : '');
+///const isProd = process.env.NODE_ENV === 'production'; // на Render это prod
 
 // ---------- Express ----------
 const app = express();
@@ -345,6 +346,30 @@ async function limitTgClicks(chatId) {
 app.post('/api/vote', requireKey, async (req, res) => {
   try {
     const { userId, category, country, region, lang, gender, ageGroup } = req.body || {};
+    if (!userId || !category) {
+      return res.status(400).json({ error: 'bad_request' });
+    }
+
+    // 1) Берём профиль из Firestore
+    const userDoc = await db.collection('users').doc(String(userId)).get();
+    const profile = userDoc.exists ? userDoc.data() : null;
+
+    // 2) Проверяем заполненность
+    const incomplete =
+      !profile ||
+      !profile.country || profile.country === 'XX' ||
+      !profile.region  ||
+      !profile.lang    ||
+      !profile.gender  ||
+      !profile.ageGroup;
+
+    if (incomplete) {
+      return res.status(403).json({
+        error: 'profile_required',
+        message: 'Сначала заполните профиль (страна, регион, язык, пол и возраст), затем голосуйте.'
+      });
+    }
+	
     const cat = String(category || '').toLowerCase();
     if (!['war', 'climate', 'personal', 'family'].includes(cat)) {
       return res.status(400).json({ ok: false, error: 'bad category' });
