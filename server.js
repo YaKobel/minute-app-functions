@@ -480,6 +480,8 @@ if (TG_TOKEN) {
   console.warn('⚠️ TELEGRAM_BOT_TOKEN is empty — бот отключён.');
 }
 
+// запустить напоминалки
+startReminderLoop();
  
  
 // webhook приёмник
@@ -755,6 +757,71 @@ if (bot && process.env.TG_REMINDER_LOOP === '1') {
     }
   }, 30_000);
 }
+
+// ===== UTC окна: 00:00 / 08:00 / 16:00 =====
+function nextUtcWindowTs(now = Date.now()) {
+  const d = new Date(now);
+  const mins = d.getUTCHours() * 60 + d.getUTCMinutes();
+  const midnight = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0);
+  const WINDOWS = [0, 8 * 60, 16 * 60];
+  const next = WINDOWS.find(m => m > mins);
+  const total = (next !== undefined ? next : WINDOWS[0] + 24 * 60);
+  return midnight + total * 60_000;
+}
+function minsLeftToWindow(now = Date.now()) {
+  return Math.floor((nextUtcWindowTs(now) - now) / 60_000);
+}
+async function sendTg(bot, chatId, text, opts={}) {
+  try { await bot.sendMessage(chatId, text, { disable_web_page_preview:true, ...opts }); }
+  catch (e) { console.error('tg send error:', e.message); }
+}
+// === Основной луп напоминалок (каждую минуту)
+function startReminderLoop() {
+  if (!process.env.TG_REMINDER_LOOP) {
+    console.log('⏳ TG reminders loop OFF (set TG_REMINDER_LOOP=1 to enable)');
+    return;
+  }
+  console.log('🔔 TG reminders loop ON');
+  setInterval(async () => {
+    try {
+      const left = minsLeftToWindow();
+      if (left !== 60 && left !== 5) return; // интересуют только 60 и 5 минут
+      const winTs = nextUtcWindowTs();
+      const winIso = new Date(winTs).toISOString();
+      // берём подписанных пользователей
+      const snap = await db.collection('subs').where('on','==',true).get();
+      if (snap.empty) return;
+      const batch = db.batch();
+      const text60 = 'Через 60 минут начнётся окно (UTC). Подготовьтесь ✨';
+      const text5  = 'Через 5 минут начнётся окно (UTC). Готовы начать минуту?';
+      for (const doc of snap.docs) {
+        const s = doc.data() || {};
+        const chatId = String(doc.id);      // у тебя id документа = chatId
+        // дедупликация по окну
+        if (left === 60) {
+          if (s.last60 === winIso) continue;
+          await sendTg(bot, chatId, text60);
+          batch.update(doc.ref, { last60: winIso, on: true });
+        } else { // 5 минут
+          if (s.last5 === winIso) continue;
+          // можно одну из кнопок дать ссылкой на твой веб-апп
+          await sendTg(bot, chatId, text5, {
+            reply_markup: { inline_keyboard: [[
+              { text: 'Открыть приложение', url: process.env.PUBLIC_BASE || 'https://minute-app-functions.onrender.com' }
+            ]] }
+          });
+          batch.update(doc.ref, { last5: winIso, on: true });
+        }
+      }
+      await batch.commit();
+    } catch (e) {
+      console.error('reminder loop error:', e.message);
+    }
+  }, 60_000);
+}
+
+
+
 
 // === ADMIN: wipe test data (votes) ===
 // Требует X-App-Key = APP_API_KEY
