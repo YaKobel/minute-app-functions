@@ -56,7 +56,7 @@
 
 
   "profile.save": "Сохранить профиль",
-  "profile.note": "Данные сохраняются в Firebase",
+  "profile.note": "",
 
   "toast.saved": "Профиль сохранён",
   

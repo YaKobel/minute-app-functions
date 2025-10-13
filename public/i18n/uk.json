@@ -57,7 +57,7 @@
   "profile.age.group.93+": ">93",
 
   "profile.save": "Зберегти профіль",
-  "profile.note": "Дані зберігаються у Firebase",
+  "profile.note": "",
   "toast.saved": "Збережено",
 
   "regions.north": "Північ",

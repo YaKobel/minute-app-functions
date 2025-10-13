@@ -57,7 +57,7 @@
   "profile.age.group.93+": ">93",
 
   "profile.save": "Save profile",
-  "profile.note": "Data is stored in Firebase",
+  "profile.note": "",
   "toast.saved": "Profile saved",
 
   "regions.north": "North",
