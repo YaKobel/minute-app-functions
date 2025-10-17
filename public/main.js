@@ -97,6 +97,27 @@ function applyI18n(root = document) {
 }
 
 
+(function showSplashOnce() {
+  try {
+    if (localStorage.getItem('splash_shown') === '1') return;
+    const el = document.getElementById('splash');
+    const v  = document.getElementById('splashVideo');
+    if (!el || !v) return;
+
+    el.style.display = 'flex';
+
+    // прячем по окончании / клику / максимум через 6с
+    const hide = () => { el.style.display = 'none'; localStorage.setItem('splash_shown','1'); };
+    v.addEventListener('ended', hide, { once: true });
+    el.addEventListener('click', hide, { once: true });
+    setTimeout(hide, 6000);
+  } catch(_) {}
+})();
+
+
+
+
+
 // ========= Инициализация =========
 document.addEventListener('DOMContentLoaded', async () => {
   // I18n bootstrap
@@ -674,6 +695,40 @@ async function sendVoteAfterMinute(category, profile) {
     }
   }, 61_000); // чуть больше 60 с, чтобы гарантированно «после минуты»
 }
+
+// mini-success video, грузим по требованию
+(function playSuccessVideo() {
+  try {
+    // создаём наложение один раз и переиспользуем
+    let box = document.getElementById('successOverlay');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'successOverlay';
+      box.style = 'position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999';
+      const v = document.createElement('video');
+      v.id = 'successVideo';
+      v.setAttribute('playsinline','');
+      v.setAttribute('muted','');
+      v.setAttribute('autoplay','');
+      v.setAttribute('preload','metadata');
+      v.style = 'max-width:100%;max-height:100%';
+      v.innerHTML = `<source src="https://yakobel.github.io/timeworld/media/app_success.mp4" type="video/mp4">`;
+      box.appendChild(v);
+      document.body.appendChild(box);
+
+      const hide = () => { box.style.display = 'none'; };
+      v.addEventListener('ended', hide);
+      box.addEventListener('click', hide);
+    }
+    box.style.display = 'flex';
+    const vv = document.getElementById('successVideo');
+    vv && vv.play().catch(()=>{});
+    // автозакрытие на случай тишины
+    setTimeout(() => { box.style.display = 'none'; }, 3500);
+  } catch(_) {}
+})();
+
+
 
 
 // Нормализуем строку: дефис, пробелы, разные тире

@@ -13,7 +13,21 @@
   
 </head>
 
+
+
 <body>
+  <!-- splash video: hidden по умолчанию -->
+  <div id="splash" style="position:fixed;inset:0;background:#000;display:none;z-index:9999;align-items:center;justify-content:center">
+    <video id="splashVideo"
+           playsinline
+           muted
+           autoplay
+           preload="metadata"
+           style="max-width:100%;max-height:100%;outline:none"
+           poster="/favicon.png">
+      <source src="https://yakobel.github.io/timeworld/media/app_intro.mp4" type="video/mp4">
+    </video>
+  </div>
 
   <!-- Верхняя панель: переключатель языка + темы -->
   <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">

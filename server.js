@@ -133,7 +133,7 @@ function buildNextWindowLine() {
   const now = new Date();
   const next = nextWindowUTC(now);
   const diffSec = Math.max(0, Math.floor((next - now) / 1000));
-  return `Следующее окно (UTC): 00:00 / 08:00 / 16:00\nчерез ${fmtHMS(diffSec)}`;
+  return `Следующее окно (UTC): через ${fmtHMS(diffSec)}`;
 }
 
 // «Минута» с обновлением раз в 10 сек
@@ -480,10 +480,7 @@ if (TG_TOKEN) {
   console.warn('⚠️ TELEGRAM_BOT_TOKEN is empty — бот отключён.');
 }
 
-// запустить напоминалки
-startReminderLoop();
- 
- 
+
 // webhook приёмник
 app.post('/telegram/webhook', (req, res) => {
   try {
@@ -541,7 +538,6 @@ async function toggleReminders(chatId) {
   return next;
 }
 function windowIso(ts) { return new Date(ts).toISOString(); }
-
 
 
 
