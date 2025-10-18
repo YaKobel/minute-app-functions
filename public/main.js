@@ -32,26 +32,44 @@ function hideSplash() {
 
 function showSplashOnce() {
   const wrap = document.getElementById('splash');
-  const v = document.getElementById('splashVideo');
+  const v    = document.getElementById('splashVideo');
+
+  // нет узлов — уходим
   if (!wrap || !v) return;
-  if (localStorage.getItem('splash_shown') === '1') {
-    hideSplash();
-    return;
-  }
-  // показываем оверлей и запускаем видео
+
+  // если уже показывали — не показываем
+  try {
+    if (localStorage.getItem('splash_shown') === '1') return;
+  } catch {}
+
+  // показываем слой и сразу ставим флажок
   wrap.style.display = 'flex';
-  const done = () => {
-    hideSplash();
-    localStorage.setItem('splash_shown', '1');
-  };
+  try { localStorage.setItem('splash_shown', '1'); } catch {}
+
+  const done = () => hideSplash();
+
+  // 1) штатное завершение
   v.addEventListener('ended', done, { once: true });
+
+  // 2) ошибка загрузки — убираем, чтобы не был чёрный экран
   v.addEventListener('error', done, { once: true });
-  // страховка: вдруг «ended» не придёт
+
+  // 3) про запас: уберём через 8 секунд даже если события не пришли
   setTimeout(done, 8000);
-  v.play().catch(done);
+
+  // автоплей может быть заблокирован — пробуем воспроизвести
+  const p = v.play();
+  if (p && typeof p.catch === 'function') {
+    p.catch(() => {
+      // не смогли воспроизвести — тоже убираем
+      done();
+    });
+  }
 }
 
+// Старт показа сплэша сразу при загрузке DOM
 document.addEventListener('DOMContentLoaded', showSplashOnce);
+
 
 
 
@@ -746,7 +764,7 @@ async function sendVoteAfterMinute(category, profile) {
       v.setAttribute('autoplay','');
       v.setAttribute('preload','metadata');
       v.style = 'max-width:100%;max-height:100%';
-      v.innerHTML = `<source src="https://yakobel.github.io/timeworld/media/app_success.mp4" type="video/mp4">`;
+      v.innerHTML = `<source src="${MEDIA_BASE}/app_success.mp4" type="video/mp4">`;
       box.appendChild(v);
       document.body.appendChild(box);
 

@@ -58,7 +58,8 @@ const db = admin.firestore();
 const PORT = Number(process.env.PORT || 3000);
 const APP_API_KEY = process.env.APP_API_KEY || '';
 const PUBLIC_BASE = (process.env.PUBLIC_BASE || '').replace(/\/+$/, '');
-const MEDIA_BASE  = (process.env.MEDIA_BASE  || (PUBLIC_BASE ? `${PUBLIC_BASE}/media` : '')).replace(/\/+$/, '');
+const MEDIA_BASE = process.env.MEDIA_BASE || 'https://yakobel.github.io/minute-app-functions/media';
+
 
 const WEBAPP_URL =
   process.env.TG_WEBAPP_URL || (PUBLIC_BASE ? `${PUBLIC_BASE}/index.html` : '');
@@ -540,29 +541,39 @@ async function toggleReminders(chatId) {
 }
 function windowIso(ts) { return new Date(ts).toISOString(); }
 
+// Медиа для Telegram-интро (короткий mp4/гиф)
+const TG_TELEG_INTRO =
+  (process.env.MEDIA_BASE ? `${process.env.MEDIA_BASE}/app_teleg.mp4`
+                          : 'https://yakobel.github.io/minute-app-functions/media/app_teleg.mp4');
 
-
-// /start — строка до окна + клавиатура
-bot.onText(/^\/(start|menu)$/i, async (msg) => {
+// /start — строка с окном + интро + клавиатура
+bot.onText(/^(\/start|menu)$/i, async (msg) => {
   const chatId = msg.chat.id;
+
   try {
-     // 6-сек. заставка (не обязательна, просто пытаемся)
-     if (MEDIA_BASE) {
-       try {
-         await bot.sendVideo(chatId, `${MEDIA_BASE}/app_teleg.mp4`, {
-           supports_streaming: true,
-           disable_notification: true
-         });
-       } catch (_) {}
-     }
-     await bot.sendMessage(chatId, buildNextWindowLine());
-     await bot.sendMessage(chatId, 'Выберите намерение на 1 минуту или откройте экраны:', {
-       reply_markup: buildStartKeyboard(),
-     });
+    // 1) КОРОТКАЯ АНІМАЦІЯ (шлём первой, чтобы была над клавиатурой)
+    // sendAnimation лучше подходит для «гифообразных» mp4
+    bot.sendAnimation(chatId, TG_TELEG_INTRO, {
+      disable_notification: true   // не пиликать
+      // Можно добавить caption: ' ' если хотите подпись
+    }).catch(err => console.warn('intro animation error:', err.message));
+
+    // 2) ТЕКСТ «Следующее окно (UTC): через …»
+    const next = buildNextWindowLine(); // ваша функция
+    await bot.sendMessage(chatId, `Следующее окно (UTC): через ${next}`);
+
+    // 3) КЛАВИАТУРА
+    await bot.sendMessage(
+      chatId,
+      'Выберите намерение на 1 минуту или откройте экраны:',
+      { reply_markup: buildStartKeyboard() }
+    );
+
   } catch (e) {
-    console.error('start error:', e.message);
+    console.error('/start error:', e);
   }
 });
+
 
   // /stats — открыть экран статистики
   bot.onText(/^\/stats$/i, async (msg) => {
