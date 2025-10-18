@@ -748,40 +748,35 @@ async function sendVoteAfterMinute(category, profile) {
   }, 61_000); // чуть больше 60 с, чтобы гарантированно «после минуты»
 }
 
-// mini-success video, грузим по требованию
-(function playSuccessVideo() {
-  try {
-    // создаём наложение один раз и переиспользуем
-    let box = document.getElementById('successOverlay');
-    if (!box) {
-      box = document.createElement('div');
-      box.id = 'successOverlay';
-      box.style = 'position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999';
-      const v = document.createElement('video');
-      v.id = 'successVideo';
-      v.setAttribute('playsinline','');
-      v.setAttribute('muted','');
-      v.setAttribute('autoplay','');
-      v.setAttribute('preload','metadata');
-      v.style = 'max-width:100%;max-height:100%';
-      ///v.innerHTML = `<source src="${MEDIA_BASE}/app_success.mp4" type="video/mp4">`;
-	  v.innerHTML = '<source src="https://yakobel.github.io/minute-app-functions/media/app_success.mp4" type="video/mp4">';
-      box.appendChild(v);
-      document.body.appendChild(box);
 
-      const hide = () => { box.style.display = 'none'; };
-      v.addEventListener('ended', hide);
-      box.addEventListener('click', hide);
-    }
-    box.style.display = 'flex';
-    const vv = document.getElementById('successVideo');
-    vv && vv.play().catch(()=>{});
-    // автозакрытие на случай тишины
-    setTimeout(() => { box.style.display = 'none'; }, 3500);
-  } catch(_) {}
-})();
-
-
+// Показ мини-видео успеха ТОЛЬКО по запросу (без автозапуска на странице)
+function showSuccessOnce() {
+  // 1) создаём/переиспользуем overlay один раз
+  let box = document.getElementById('successOverlay');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'successOverlay';
+    box.style = 'position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999';
+    const v = document.createElement('video');
+    v.id = 'successVideo';
+    v.setAttribute('playsinline','');
+    v.setAttribute('muted','');
+    v.setAttribute('preload','metadata');
+    v.style = 'max-width:100%;max-height:100%';
+    // если хочешь через MEDIA_BASE, подставь здесь:
+    v.innerHTML = '<source src="https://yakobel.github.io/minute-app-functions/media/app_success.mp4" type="video/mp4">';
+    box.appendChild(v);
+    document.body.appendChild(box);
+  }
+  const v = document.getElementById('successVideo');
+  const hide = () => { box.style.display = 'none'; };
+  box.onclick = hide;
+  v.onended = hide;
+  // 2) показать и проиграть
+  box.style.display = 'flex';
+  try { v.currentTime = 0; } catch {}
+  v.play().catch(() => setTimeout(hide, 1200)); // на случай автоплея
+}
 
 
 // Нормализуем строку: дефис, пробелы, разные тире
