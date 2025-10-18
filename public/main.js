@@ -21,56 +21,106 @@ const LOCK_PREFIX = 'minute.lock.';
   }
 })();
 
-// ===== Splash video (один раз) =====
-function hideSplash() {
-  const wrap = document.getElementById('splash');
-  const v = document.getElementById('splashVideo');
-  if (!wrap || !v) return;
-  wrap.style.display = 'none';
-  try { v.pause(); v.currentTime = 0; } catch {}
-}
+///// ===== Splash video (один раз) =====
+///function hideSplash() {
+///  const wrap = document.getElementById('splash');
+///  const v = document.getElementById('splashVideo');
+///  if (!wrap || !v) return;
+///  wrap.style.display = 'none';
+///  try { v.pause(); v.currentTime = 0; } catch {}
+///}
+///
+///function showSplashOnce() {
+///  const wrap = document.getElementById('splash');
+///  const v    = document.getElementById('splashVideo');
+///
+///  // нет узлов — уходим
+///  if (!wrap || !v) return;
+///
+///  // если уже показывали — не показываем
+///  try {
+///    if (localStorage.getItem('splash_shown') === '1') return;
+///  } catch {}
+///
+///  // показываем слой и сразу ставим флажок
+///  wrap.style.display = 'flex';
+///  try { localStorage.setItem('splash_shown', '1'); } catch {}
+///
+///  const done = () => hideSplash();
+///
+///  // 1) штатное завершение
+///  v.addEventListener('ended', done, { once: true });
+///
+///  // 2) ошибка загрузки — убираем, чтобы не был чёрный экран
+///  v.addEventListener('error', done, { once: true });
+///
+///  // 3) про запас: уберём через 8 секунд даже если события не пришли
+///  setTimeout(done, 8000);
+///
+///  // автоплей может быть заблокирован — пробуем воспроизвести
+///  const p = v.play();
+///  if (p && typeof p.catch === 'function') {
+///    p.catch(() => {
+///      // не смогли воспроизвести — тоже убираем
+///      done();
+///    });
+///  }
+///}
+///
+///// Старт показа сплэша сразу при загрузке DOM
+///document.addEventListener('DOMContentLoaded', showSplashOnce);
 
-function showSplashOnce() {
+
+// ====== INTRO (app_intro.mp4) — показывать 1 раз на вкладку ======
+const INTRO_KEY = 'intro_played';
+
+function hideIntro() {
   const wrap = document.getElementById('splash');
   const v    = document.getElementById('splashVideo');
-
-  // нет узлов — уходим
-  if (!wrap || !v) return;
-
-  // если уже показывали — не показываем
-  try {
-    if (localStorage.getItem('splash_shown') === '1') return;
-  } catch {}
-
-  // показываем слой и сразу ставим флажок
-  wrap.style.display = 'flex';
-  try { localStorage.setItem('splash_shown', '1'); } catch {}
-
-  const done = () => hideSplash();
-
-  // 1) штатное завершение
-  v.addEventListener('ended', done, { once: true });
-
-  // 2) ошибка загрузки — убираем, чтобы не был чёрный экран
-  v.addEventListener('error', done, { once: true });
-
-  // 3) про запас: уберём через 8 секунд даже если события не пришли
-  setTimeout(done, 8000);
-
-  // автоплей может быть заблокирован — пробуем воспроизвести
-  const p = v.play();
-  if (p && typeof p.catch === 'function') {
-    p.catch(() => {
-      // не смогли воспроизвести — тоже убираем
-      done();
-    });
-  }
+  if (wrap) wrap.style.display = 'none';
+  if (v) { try { v.pause(); v.currentTime = 0; } catch(_){} }
 }
 
-// Старт показа сплэша сразу при загрузке DOM
-document.addEventListener('DOMContentLoaded', showSplashOnce);
+function ensureIntroOverlay() {
+  if (document.getElementById('splash') && document.getElementById('splashVideo')) return;
+  const wrap = document.createElement('div');
+  wrap.id = 'splash';
+  wrap.style = 'position:fixed;inset:0;background:#000;display:none;z-index:9999;align-items:center;justify-content:center';
+  const v = document.createElement('video');
+  v.id = 'splashVideo';
+  v.setAttribute('playsinline','');
+  v.setAttribute('muted','');
+  v.setAttribute('autoplay','');
+  v.setAttribute('preload','metadata');
+  v.style = 'max-width:100%;max-height:100%;outline:none';
+  v.innerHTML = `<source src="https://yakobel.github.io/minute-app-functions/media/app_intro.mp4" type="video/mp4">`;
+  wrap.appendChild(v);
+  document.body.appendChild(wrap);
+}
 
+function showIntroOncePerTab() {
+  try {
+    if (sessionStorage.getItem(INTRO_KEY) === '1') return;
+  } catch (_) {}
+  ensureIntroOverlay();
+  const wrap = document.getElementById('splash');
+  const v    = document.getElementById('splashVideo');
+  if (!wrap || !v) return;
+  const done = () => {
+    hideIntro();
+    try { sessionStorage.setItem(INTRO_KEY, '1'); } catch(_) {}
+  };
+  wrap.style.display = 'flex';
+  v.addEventListener('ended', done, { once: true });
+  v.addEventListener('error', done, { once: true });
+  setTimeout(done, 8000);
+  try { v.play(); } catch(_) {}
+}
 
+document.addEventListener('DOMContentLoaded', () => {
+  if (/[?&]noIntro=1\b/.test(location.search)) return;
+  showIntroOncePerTab();
+});
 
 
 

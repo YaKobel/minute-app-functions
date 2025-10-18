@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="ru" class="theme-c">
 <head>
+  <!-- ГАРД: если интро уже показали в текущей вкладке — прячем сплэш -->
+  <script>
+  try {
+    if (sessionStorage.getItem('intro_played') === '1' || /[?&]noIntro=1\b/.test(location.search)) {
+      document.write('<style>#splash{display:none!important}</style>');
+    }
+  } catch (e) {}
+  </script>
+  
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Профиль</title>
