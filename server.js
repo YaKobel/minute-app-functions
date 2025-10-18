@@ -543,47 +543,36 @@ function windowIso(ts) { return new Date(ts).toISOString(); }
 
 // Медиа для Telegram-интро (короткий mp4/гиф)
 const TG_TELEG_INTRO =
-  (process.env.MEDIA_BASE ? `${process.env.MEDIA_BASE}/app_teleg.mp4`
-                          : 'https://yakobel.github.io/minute-app-functions/media/app_teleg.mp4');
+  process.env.MEDIA_BASE
+    ? `${process.env.MEDIA_BASE}/app_teleg.mp4`
+    : 'https://yakobel.github.io/minute-app-functions/media/app_teleg.mp4';
 
 // /start — строка «до окна» + «заставка» + клавиатура
-bot.onText(/^\/(start|menu|s)$/, async (msg) => {
-  const chatId = msg.chat.id;
-
-  try {
-    // 1) строка «Следующее окно (UTC): через ...»
-    const nextLine = buildNextWindowLine();     // строка целиком
-    await bot.sendMessage(chatId, nextLine);
-
-    // 2) короткая заставка (gif/mp4).
-    // Для коротких клипов Telegram визуально лучше рендерит sendAnimation.
-    const TG_TELEG_INTRO =
-      (process.env.MEDIA_BASE
-        ? `${process.env.MEDIA_BASE}/app_teleg.mp4`
-        : 'https://yakobel.github.io/minute-app-functions/media/app_teleg.mp4');
-
-    if (TG_TELEG_INTRO) {
-      await bot.sendAnimation(chatId, TG_TELEG_INTRO, {
-        disable_notification: true,
-      });
-      // Если захотите именно видео, а не «анимацию», замените на:
-      // await bot.sendVideo(chatId, TG_TELEG_INTRO, {
-      //   supports_streaming: true,
-      //   disable_notification: true,
-      // });
+// /start — одна реализация
+if (bot) {
+  bot.onText(/^\/(start|menu)$/i, async (msg) => {
+    const chatId = msg.chat.id;
+    try {
+      // 1) заставка над клавиатурой
+      if (TG_TELEG_INTRO) {
+        await bot.sendAnimation(chatId, TG_TELEG_INTRO, {
+          disable_notification: true,
+        });
+      }
+      // 2) «следующее окно…»
+      const next = buildNextWindowLine();
+      await bot.sendMessage(chatId, `Следующее окно (UTC): через ${next}`);
+      // 3) меню
+      await bot.sendMessage(
+        chatId,
+        'Выберите намерение на 1 минуту или откройте экраны:',
+        { reply_markup: buildStartKeyboard() }
+      );
+    } catch (e) {
+      console.error('start error:', e);
     }
-
-    // 3) меню
-    await bot.sendMessage(
-      chatId,
-      'Выберите намерение на 1 минуту или откройте экраны:',
-      { reply_markup: buildStartKeyboard() }
-    );
-
-  } catch (e) {
-    console.error('start: error:', e);
-  }
-});
+  });
+}
 
 
   // /stats — открыть экран статистики
@@ -685,7 +674,6 @@ bot.onText(/^\/(start|menu|s)$/, async (msg) => {
 } else {
   console.warn('⚠️ Бот не инициализирован — обработчики Telegram отключены.');
 }
-
 
 // WebApp → sendData: переключение колокольчика и пр.
 if (bot) {
