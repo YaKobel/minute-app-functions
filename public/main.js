@@ -21,6 +21,40 @@ const LOCK_PREFIX = 'minute.lock.';
   }
 })();
 
+// ===== Splash video (один раз) =====
+function hideSplash() {
+  const wrap = document.getElementById('splash');
+  const v = document.getElementById('splashVideo');
+  if (!wrap || !v) return;
+  wrap.style.display = 'none';
+  try { v.pause(); v.currentTime = 0; } catch {}
+}
+
+function showSplashOnce() {
+  const wrap = document.getElementById('splash');
+  const v = document.getElementById('splashVideo');
+  if (!wrap || !v) return;
+  if (localStorage.getItem('splash_shown') === '1') {
+    hideSplash();
+    return;
+  }
+  // показываем оверлей и запускаем видео
+  wrap.style.display = 'flex';
+  const done = () => {
+    hideSplash();
+    localStorage.setItem('splash_shown', '1');
+  };
+  v.addEventListener('ended', done, { once: true });
+  v.addEventListener('error', done, { once: true });
+  // страховка: вдруг «ended» не придёт
+  setTimeout(done, 8000);
+  v.play().catch(done);
+}
+
+document.addEventListener('DOMContentLoaded', showSplashOnce);
+
+
+
 
 function makeHiddenPlaceholderOption(label, selected) {
   const o = document.createElement('option');

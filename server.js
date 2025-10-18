@@ -58,6 +58,7 @@ const db = admin.firestore();
 const PORT = Number(process.env.PORT || 3000);
 const APP_API_KEY = process.env.APP_API_KEY || '';
 const PUBLIC_BASE = (process.env.PUBLIC_BASE || '').replace(/\/+$/, '');
+const MEDIA_BASE  = (process.env.MEDIA_BASE  || (PUBLIC_BASE ? `${PUBLIC_BASE}/media` : '')).replace(/\/+$/, '');
 
 const WEBAPP_URL =
   process.env.TG_WEBAPP_URL || (PUBLIC_BASE ? `${PUBLIC_BASE}/index.html` : '');
@@ -542,18 +543,26 @@ function windowIso(ts) { return new Date(ts).toISOString(); }
 
 
 // /start — строка до окна + клавиатура
-if (bot) {
-  bot.onText(/^\/(start|menu)$/i, async (msg) => {
-    const chatId = msg.chat.id;
-    try {
-      await bot.sendMessage(chatId, buildNextWindowLine());
-      await bot.sendMessage(chatId, 'Выберите намерение на 1 минуту или откройте экраны:', {
-        reply_markup: buildStartKeyboard(),
-      });
-    } catch (e) {
-      console.error('start error:', e.message);
-    }
-  });
+bot.onText(/^\/(start|menu)$/i, async (msg) => {
+  const chatId = msg.chat.id;
+  try {
+     // 6-сек. заставка (не обязательна, просто пытаемся)
+     if (MEDIA_BASE) {
+       try {
+         await bot.sendVideo(chatId, `${MEDIA_BASE}/app_teleg.mp4`, {
+           supports_streaming: true,
+           disable_notification: true
+         });
+       } catch (_) {}
+     }
+     await bot.sendMessage(chatId, buildNextWindowLine());
+     await bot.sendMessage(chatId, 'Выберите намерение на 1 минуту или откройте экраны:', {
+       reply_markup: buildStartKeyboard(),
+     });
+  } catch (e) {
+    console.error('start error:', e.message);
+  }
+});
 
   // /stats — открыть экран статистики
   bot.onText(/^\/stats$/i, async (msg) => {
