@@ -764,6 +764,7 @@ async function sendVoteAfterMinute(category, profile) {
       v.setAttribute('autoplay','');
       v.setAttribute('preload','metadata');
       v.style = 'max-width:100%;max-height:100%';
+      ///v.innerHTML = `<source src="${MEDIA_BASE}/app_success.mp4" type="video/mp4">`;
 	  v.innerHTML = '<source src="https://yakobel.github.io/minute-app-functions/media/app_success.mp4" type="video/mp4">';
       box.appendChild(v);
       document.body.appendChild(box);

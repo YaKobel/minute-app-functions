@@ -547,33 +547,30 @@ const TG_TELEG_INTRO =
     ? `${process.env.MEDIA_BASE}/app_teleg.mp4`
     : 'https://yakobel.github.io/minute-app-functions/media/app_teleg.mp4';
 
-// /start — строка «до окна» + «заставка» + клавиатура
-// /start — одна реализация
+// Все Telegram-обработчики объявляем ТОЛЬКО если бот создан
 if (bot) {
+  // /start (или /menu): короткая заставка + текст «следующее окно» + клавиатура
   bot.onText(/^\/(start|menu)$/i, async (msg) => {
     const chatId = msg.chat.id;
     try {
-      // 1) заставка над клавиатурой
+      // 6-сек. интро (можно выключить — просто закомментируй)
       if (TG_TELEG_INTRO) {
-        await bot.sendAnimation(chatId, TG_TELEG_INTRO, {
-          disable_notification: true,
-        });
+        try {
+          await bot.sendVideo(chatId, TG_TELEG_INTRO, {
+            supports_streaming: true,
+            disable_notification: true,
+          });
+        } catch (_) {}
       }
-      // 2) «следующее окно…»
-      const next = buildNextWindowLine();
-      await bot.sendMessage(chatId, `Следующее окно (UTC): через ${next}`);
-      // 3) меню
-      await bot.sendMessage(
-        chatId,
-        'Выберите намерение на 1 минуту или откройте экраны:',
-        { reply_markup: buildStartKeyboard() }
-      );
+      const nextLine = buildNextWindowLine();
+      await bot.sendMessage(chatId, nextLine);
+      await bot.sendMessage(chatId, 'Выберите намерение на 1 минуту или откройте экраны:', {
+        reply_markup: buildStartKeyboard(),
+      });
     } catch (e) {
-      console.error('start error:', e);
+      console.error('start error:', e.message);
     }
   });
-}
-
 
   // /stats — открыть экран статистики
   bot.onText(/^\/stats$/i, async (msg) => {
@@ -588,7 +585,7 @@ if (bot) {
     }
   });
 
-  // обработка нажатий
+  // обработка нажатий (кнопки)
   bot.on('callback_query', async (query) => {
     try {
       const chatId = query?.message?.chat?.id;
@@ -621,7 +618,6 @@ if (bot) {
         const ok = ['war','climate','personal','family'].includes(category);
         if (!ok) return;
 
-        // профиль (country/region/gender/ageGroup/lang)
         const prof = await readUserProfile(chatId);
         if (!prof?.country) {
           await bot.sendMessage(
@@ -632,14 +628,8 @@ if (bot) {
           return;
         }
 
-        const country = prof.country;
-        const region  = prof.region  ?? null;
-        const gender  = prof.gender  ?? null;
-        const ageGroup= prof.ageGroup?? null;
-        const lang    = prof.lang    ?? null;
-
-        // ограничитель кликов (1 — live; 2 — defer; 3+ — block)
-        const lim = await limitTgClicks(chatId);
+        const { country, region=null, gender=null, ageGroup=null, lang=null } = prof;
+        const lim = await limitTgClicks(chatId); // 1=live, 2=defer, 3+=block
 
         if (lim.action === 'live') {
           await bot.answerCallbackQuery(query.id, { text: 'Минута запущена ⏱️', show_alert: false });
@@ -652,7 +642,6 @@ if (bot) {
               });
             } catch (e) { console.error('save live vote error:', e.message); }
           }, 61_000);
-
         } else if (lim.action === 'defer') {
           const ts = lim.targetTs;
           await bot.answerCallbackQuery(query.id, { text: `Голос запланирован на ближайшее окно: ${fmtUtc(ts)}`, show_alert: true });
@@ -661,7 +650,6 @@ if (bot) {
             applyAt: admin.firestore.Timestamp.fromMillis(ts),
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
           });
-
         } else {
           await bot.answerCallbackQuery(query.id, { text: 'В этом окне уже 2 отметки. Попробуйте в следующем окне.', show_alert: true });
         }
@@ -671,9 +659,7 @@ if (bot) {
       try { await bot.answerCallbackQuery(query.id, { text: 'Ошибка. Попробуйте ещё раз', show_alert: true }); } catch {}
     }
   });
-} else {
-  console.warn('⚠️ Бот не инициализирован — обработчики Telegram отключены.');
-}
+} // <— ВАЖНО: никаких else тут не нужно (варнинг уже был выше при пустом токене)
 
 // WebApp → sendData: переключение колокольчика и пр.
 if (bot) {
