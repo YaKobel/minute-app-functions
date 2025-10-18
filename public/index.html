@@ -4,7 +4,7 @@
   <!-- мгновенная защита от повторного показа сплэша -->
   <script>
     try {
-      if (localStorage.getItem('splash_shown') === '3') {
+      if (localStorage.getItem('splash_shown') === '2') {
         document.write('<style>#splash{display:none!important;}</style>');
       }
     } catch (e) {}

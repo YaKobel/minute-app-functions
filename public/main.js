@@ -39,12 +39,12 @@ function showSplashOnce() {
 
   // если уже показывали — не показываем
   try {
-    if (localStorage.getItem('splash_shown') === '3') return;
+    if (localStorage.getItem('splash_shown') === '1') return;
   } catch {}
 
   // показываем слой и сразу ставим флажок
   wrap.style.display = 'flex';
-  try { localStorage.setItem('splash_shown', '3'); } catch {}
+  try { localStorage.setItem('splash_shown', '1'); } catch {}
 
   const done = () => hideSplash();
 
@@ -702,29 +702,32 @@ function incLiveCount(ts = getNextWindowTs()) {
   return n;
 }
 
+// Отправка голоса через 61 секунду ("после минуты") с проверкой профиля
 async function sendVoteAfterMinute(category, profile) {
-  // шлём ровно через минуту (чтобы выглядело «после минуты»)
   setTimeout(async () => {
     try {
-      // 1) Жёсткая проверка профиля на клиенте
+      // 1️⃣ Проверяем профиль — если чего-то нет, прерываем
       const p = profile || {};
       const hasProfile = p.country && p.region && p.lang && p.gender && p.ageGroup;
       if (!hasProfile) {
         showToast('Сначала заполните профиль (страна, регион, язык, пол, возраст).');
         return;
       }
-      // 2) Собираем payload без дефолтов 'XX'
+
+      // 2️⃣ Формируем payload без дефолтов
       const payload = {
         userId: detectUserId?.() || 'web',
         category,
         country: String(p.country).toUpperCase(),
-        region : p.region,
-        gender : p.gender,
+        region: p.region,
+        gender: p.gender,
         ageGroup: p.ageGroup,
-        lang   : p.lang || getLang?.() || 'ru',
-        mode   : 'live',
-        at     : Date.now()
+        lang: p.lang || getLang?.() || 'ru',
+        mode: 'live',
+        at: Date.now(),
       };
+
+      // 3️⃣ Отправляем запрос на сервер
       const resp = await fetch('/api/vote', {
         method: 'POST',
         headers: {
@@ -733,17 +736,27 @@ async function sendVoteAfterMinute(category, profile) {
         },
         body: JSON.stringify(payload)
       });
-      // 3) Учитываем ответ сервера — тост только при ok:true
+
+      // 4️⃣ Читаем ответ и проверяем ok:true
       let data = null;
-      try { data = await resp.json(); } catch {}
+      try { data = await resp.json(); } catch (_) {}
       if (!resp.ok || !data?.ok) {
         const msg = data?.message || data?.error || 'Ошибка отправки';
         showToast(msg);
         return;
       }
+
+      // 5️⃣ Успех — показываем тост и запускаем видео успеха
       showToast('Голос засчитан: ' + category);
-      // короткое видео успеха — ТОЛЬКО после ok от сервера
-      try { window.showSuccessOnce?.(); } catch (e) { console.warn('showSuccessOnce error', e); }
+      try {
+        if (window.showSuccessOnce) {
+          console.log('🎬 success video trigger'); // лог в консоль
+          window.showSuccessOnce();
+        }
+      } catch (e) {
+        console.warn('showSuccessOnce error', e);
+      }
+
     } catch (e) {
       console.error('vote err', e);
     }
@@ -751,36 +764,40 @@ async function sendVoteAfterMinute(category, profile) {
 }
 
 
+
 // Показ мини-видео успеха ТОЛЬКО по запросу (без автозапуска на странице)
- window.showSuccessOnce = function showSuccessOnce() {
-  console.log('🎬 showSuccessOnce(): запуск видео успеха')
+window.showSuccessOnce = function showSuccessOnce() {
+  console.log('🎬 showSuccessOnce(): запуск видео успеха');
+  // 1) создаём/переиспользуем overlay один раз
   let box = document.getElementById('successOverlay');
-    // 1) создаём/переиспользуем overlay один раз
-    let box = document.getElementById('successOverlay');
-    if (!box) {
-      box = document.createElement('div');
-      box.id = 'successOverlay';
-      box.style = 'position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999';
-      const v = document.createElement('video');
-      v.id = 'successVideo';
-      v.setAttribute('playsinline','');
-      v.setAttribute('muted','');
-      v.setAttribute('autoplay','');
-      v.setAttribute('preload','metadata');
-      v.style = 'max-width:100%;max-height:100%';
-      // если хочешь через MEDIA_BASE, подставь здесь:
-      v.innerHTML = '<source src="https://yakobel.github.io/minute-app-functions/media/app_success.mp4" type="video/mp4">';
-      box.appendChild(v);
-      document.body.appendChild(box);
-    }
-    const v = document.getElementById('successVideo');
-    const hide = () => { box.style.display = 'none'; };
-    box.onclick = hide;
-    v.onended = hide;
-    // 2) показать и проиграть
-    box.style.display = 'flex';
-    try { v.currentTime = 0; } catch {}
-    v.play().catch(() => setTimeout(hide, 1200)); // на случай автоплея
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'successOverlay';
+    box.style = 'position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999';
+    const v = document.createElement('video');
+    v.id = 'successVideo';
+    v.setAttribute('playsinline','');
+    v.setAttribute('muted','');      // для автоплея на мобилках
+    v.setAttribute('autoplay','');
+    v.setAttribute('preload','metadata');
+    v.style = 'max-width:100%;max-height:100%';
+    // жёсткая ссылка на GitHub Pages (самый стабильный источник)
+    v.innerHTML = '<source src="https://yakobel.github.io/minute-app-functions/media/app_success.mp4" type="video/mp4">';
+    box.appendChild(v);
+    document.body.appendChild(box);
+  }
+  // 2) показать и проиграть
+  const v = document.getElementById('successVideo');
+  const hide = () => { box.style.display = 'none'; try { v.pause(); v.currentTime = 0; } catch {} };
+  box.onclick = hide;
+  v.onended = hide;
+  v.onerror = hide;
+  box.style.display = 'flex';
+  try { v.currentTime = 0; } catch {}
+  const p = v.play();
+  if (p && p.catch) p.catch(() => setTimeout(hide, 1200)); // если автоплей запретили
+  // жёсткая страховка — вдруг ни ended, ни error не пришли
+  setTimeout(hide, 3500);
 };
 
 
