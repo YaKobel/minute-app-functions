@@ -21,93 +21,56 @@ const LOCK_PREFIX = 'minute.lock.';
   }
 })();
 
-// ===== Splash: показывать максимум 2 раза в каждое UTC-окно (00/08/16) =====
-
-// вычисление ключа текущего окна
-function splashWindowKey(now = Date.now()) {
-  const d = new Date(now);
-  const mins = d.getUTCHours() * 60 + d.getUTCMinutes();
-  const WINDOWS_MIN = [0, 8*60, 16*60];
-  const midnightUTC = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
-  const next = WINDOWS_MIN.find(m => m > mins);
-  const total = (next !== undefined ? next : WINDOWS_MIN[0] + 24*60);
-  const nextTs = midnightUTC + total*60*1000;
-  return 'minute.splash.' + new Date(nextTs).toISOString();
+// ===== Splash video (один раз) =====
+function hideSplash() {
+  const wrap = document.getElementById('splash');
+  const v = document.getElementById('splashVideo');
+  if (!wrap || !v) return;
+  wrap.style.display = 'none';
+  try { v.pause(); v.currentTime = 0; } catch {}
 }
 
-// на каких страницах показывать: главная / статистика / профиль
-function isSplashEligiblePage() {
-  return !!document.getElementById('hero')        // главная
-      || !!document.getElementById('periodTabs')  // статистика
-      || !!document.getElementById('profileForm');// профиль
-}
+function showSplashOnce() {
+  const wrap = document.getElementById('splash');
+  const v    = document.getElementById('splashVideo');
 
-// гарантированно иметь DOM для сплэша (если его нет на странице — создадим)
-function ensureSplashDom() {
-  let wrap = document.getElementById('splash');
-  let vid  = document.getElementById('splashVideo');
-  if (!wrap) {
-    wrap = document.createElement('div');
-    wrap.id = 'splash';
-    wrap.style = 'position:fixed;inset:0;display:none;z-index:9999;background:#000;align-items:center;justify-content:center;';
-    document.body.appendChild(wrap);
-  }
-  if (!vid) {
-    vid = document.createElement('video');
-    vid.id = 'splashVideo';
-    vid.setAttribute('playsinline','');
-    vid.setAttribute('muted','');
-    vid.setAttribute('preload','metadata');
-    vid.style = 'max-width:100%;max-height:100%;outline:none';
-    vid.innerHTML = '<source src="https://yakobel.github.io/minute-app-functions/media/app_intro.mp4" type="video/mp4">';
-    wrap.appendChild(vid);
-  }
-  return { wrap, vid };
-}
+  // нет узлов — уходим
+  if (!wrap || !v) return;
 
-function showSplashTwicePerWindow() {
-  if (!isSplashEligiblePage()) return;
-  const { wrap, vid } = ensureSplashDom();
-  if (!wrap || !vid) return;
-
-  // счётчик для текущего окна
-  const key = splashWindowKey();
-  let cnt = 0;
-  try { cnt = parseInt(localStorage.getItem(key) || '0', 10) || 0; } catch {}
-
-  if (cnt >= 2) return; // уже показывали дважды в это окно
-
-  // показать
-  wrap.style.display = 'flex';
-  const hide = () => {
-    wrap.style.display = 'none';
-    try { vid.pause(); vid.currentTime = 0; } catch {}
-    try { localStorage.setItem(key, String(Math.min(cnt + 1, 2))); } catch {}
-  };
-  vid.addEventListener('ended', hide, { once:true });
-  vid.addEventListener('error', hide, { once:true });
-  wrap.addEventListener('click', hide, { once:true });
-
-  // подстраховка от зависаний — 8 сек макс
-  setTimeout(hide, 8000);
-
-  // пуск
-  try { vid.play().catch(hide); } catch { hide(); }
-
-  // авто-очистка старых ключей (старше суток)
+  // если уже показывали — не показываем
   try {
-    const dayAgo = Date.now() - 24*60*60*1000;
-    for (let i = localStorage.length - 1; i >= 0; i--) {
-      const k = localStorage.key(i);
-      if (k && k.startsWith('minute.splash.')) {
-        const ts = Date.parse(k.slice('minute.splash.'.length));
-        if (!Number.isFinite(ts) || ts < dayAgo) localStorage.removeItem(k);
-      }
-    }
+    if (localStorage.getItem('splash_shown') === '3') return;
   } catch {}
+
+  // показываем слой и сразу ставим флажок
+  wrap.style.display = 'flex';
+  try { localStorage.setItem('splash_shown', '3'); } catch {}
+
+  const done = () => hideSplash();
+
+  // 1) штатное завершение
+  v.addEventListener('ended', done, { once: true });
+
+  // 2) ошибка загрузки — убираем, чтобы не был чёрный экран
+  v.addEventListener('error', done, { once: true });
+
+  // 3) про запас: уберём через 8 секунд даже если события не пришли
+  setTimeout(done, 8000);
+
+  // автоплей может быть заблокирован — пробуем воспроизвести
+  const p = v.play();
+  if (p && typeof p.catch === 'function') {
+    p.catch(() => {
+      // не смогли воспроизвести — тоже убираем
+      done();
+    });
+  }
 }
 
-document.addEventListener('DOMContentLoaded', showSplashTwicePerWindow);
+// Старт показа сплэша сразу при загрузке DOM
+document.addEventListener('DOMContentLoaded', showSplashOnce);
+
+
 
 
 

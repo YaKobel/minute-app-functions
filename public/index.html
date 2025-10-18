@@ -1,20 +1,13 @@
 <!doctype html>
 <html lang="ru" class="theme-c">
 <head>
-  <!-- мгновенный гард: спрятать сплэш, если для текущего окна уже было 2 показа -->
+  <!-- мгновенная защита от повторного показа сплэша -->
   <script>
     try {
-      const WINDOWS_MIN = [0, 8*60, 16*60];
-      const now = new Date();
-      const mins = now.getUTCHours()*60 + now.getUTCMinutes();
-      const midnightUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-      const next = WINDOWS_MIN.find(m => m > mins);
-      const total = (next !== undefined ? next : WINDOWS_MIN[0] + 24*60);
-      const nextTs = midnightUTC + total*60*1000;
-      const key = 'minute.splash.' + new Date(nextTs).toISOString();
-      const cnt = parseInt(localStorage.getItem(key) || '0', 10);
-      if (cnt >= 2) document.write('<style>#splash{display:none!important;}</style>');
-    } catch(e) {}
+      if (localStorage.getItem('splash_shown') === '3') {
+        document.write('<style>#splash{display:none!important;}</style>');
+      }
+    } catch (e) {}
   </script>
 
   <meta charset="utf-8"/>
