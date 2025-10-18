@@ -553,10 +553,10 @@ bot.onText(/^(\/start|menu)$/i, async (msg) => {
   try {
     // 1) КОРОТКАЯ АНІМАЦІЯ (шлём первой, чтобы была над клавиатурой)
     // sendAnimation лучше подходит для «гифообразных» mp4
-    bot.sendAnimation(chatId, TG_TELEG_INTRO, {
-      disable_notification: true   // не пиликать
-      // Можно добавить caption: ' ' если хотите подпись
-    }).catch(err => console.warn('intro animation error:', err.message));
+    await bot.sendVideo(chatId, TG_TELEG_INTRO, {
+      supports_streaming: true,
+      disable_notification: true
+    });
 
     // 2) ТЕКСТ «Следующее окно (UTC): через …»
     const next = buildNextWindowLine(); // ваша функция
