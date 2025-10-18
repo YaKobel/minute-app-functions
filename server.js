@@ -549,20 +549,27 @@ const TG_TELEG_INTRO =
 // /start — строка «до окна» + «заставка» + клавиатура
 bot.onText(/^\/(start|menu|s)$/, async (msg) => {
   const chatId = msg.chat.id;
-  try {
-    // 1) строка «следующее окно (UTC)…»
-    const next = buildNextWindowLine();
-    await bot.sendMessage(chatId, `Следующее окно (UTC): через ${next}`);
 
-    // 2) короткая заставка (GIF/MP4). Для коротких роликов телеграм лучше рендерит sendAnimation
+  try {
+    // 1) строка «Следующее окно (UTC): через ...»
+    const nextLine = buildNextWindowLine();     // строка целиком
+    await bot.sendMessage(chatId, nextLine);
+
+    // 2) короткая заставка (gif/mp4).
+    // Для коротких клипов Telegram визуально лучше рендерит sendAnimation.
+    const TG_TELEG_INTRO =
+      (process.env.MEDIA_BASE
+        ? `${process.env.MEDIA_BASE}/app_teleg.mp4`
+        : 'https://yakobel.github.io/minute-app-functions/media/app_teleg.mp4');
+
     if (TG_TELEG_INTRO) {
       await bot.sendAnimation(chatId, TG_TELEG_INTRO, {
-        disable_notification: true
+        disable_notification: true,
       });
-      // Если хочешь именно видео:
+      // Если захотите именно видео, а не «анимацию», замените на:
       // await bot.sendVideo(chatId, TG_TELEG_INTRO, {
       //   supports_streaming: true,
-      //   disable_notification: true
+      //   disable_notification: true,
       // });
     }
 
@@ -572,6 +579,7 @@ bot.onText(/^\/(start|menu|s)$/, async (msg) => {
       'Выберите намерение на 1 минуту или откройте экраны:',
       { reply_markup: buildStartKeyboard() }
     );
+
   } catch (e) {
     console.error('start: error:', e);
   }
