@@ -546,31 +546,34 @@ const TG_TELEG_INTRO =
   (process.env.MEDIA_BASE ? `${process.env.MEDIA_BASE}/app_teleg.mp4`
                           : 'https://yakobel.github.io/minute-app-functions/media/app_teleg.mp4');
 
-// /start — строка с окном + интро + клавиатура
-bot.onText(/^(\/start|menu)$/i, async (msg) => {
+// /start — строка «до окна» + «заставка» + клавиатура
+bot.onText(/^\/(start|menu|s)$/, async (msg) => {
   const chatId = msg.chat.id;
-
   try {
-    // 1) КОРОТКАЯ АНІМАЦІЯ (шлём первой, чтобы была над клавиатурой)
-    // sendAnimation лучше подходит для «гифообразных» mp4
-    await bot.sendVideo(chatId, TG_TELEG_INTRO, {
-      supports_streaming: true,
-      disable_notification: true
-    });
-
-    // 2) ТЕКСТ «Следующее окно (UTC): через …»
-    const next = buildNextWindowLine(); // ваша функция
+    // 1) строка «следующее окно (UTC)…»
+    const next = buildNextWindowLine();
     await bot.sendMessage(chatId, `Следующее окно (UTC): через ${next}`);
 
-    // 3) КЛАВИАТУРА
+    // 2) короткая заставка (GIF/MP4). Для коротких роликов телеграм лучше рендерит sendAnimation
+    if (TG_TELEG_INTRO) {
+      await bot.sendAnimation(chatId, TG_TELEG_INTRO, {
+        disable_notification: true
+      });
+      // Если хочешь именно видео:
+      // await bot.sendVideo(chatId, TG_TELEG_INTRO, {
+      //   supports_streaming: true,
+      //   disable_notification: true
+      // });
+    }
+
+    // 3) меню
     await bot.sendMessage(
       chatId,
       'Выберите намерение на 1 минуту или откройте экраны:',
       { reply_markup: buildStartKeyboard() }
     );
-
   } catch (e) {
-    console.error('/start error:', e);
+    console.error('start: error:', e);
   }
 });
 
