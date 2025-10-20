@@ -122,6 +122,69 @@ document.addEventListener('DOMContentLoaded', () => {
   showIntroOncePerTab();
 });
 
+// ===== Presence: пульс + обновление счетчика =====
+const PULSE_MS = 25_000;  // каждые 25с держим "онлайн"
+const CID_KEY  = 'cid';
+
+function getClientId() {
+  let id = null;
+  try { id = localStorage.getItem(CID_KEY); } catch(_) {}
+  if (!id) {
+    id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    try { localStorage.setItem(CID_KEY, id); } catch(_) {}
+  }
+  return id;
+}
+
+function setPresenceCount(n) {
+  const el = document.getElementById('presenceCount');
+  if (el && Number.isFinite(n)) el.textContent = String(n);
+}
+
+async function pingPresence() {
+  try {
+    const r = await fetch('/api/presence/ping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId: getClientId() })
+    });
+    const data = await r.json().catch(()=>null);
+    if (data?.ok && Number.isFinite(data.count)) setPresenceCount(data.count);
+  } catch (_) {}
+}
+
+async function refreshPresence() {
+  try {
+    const r = await fetch('/api/presence');
+    const data = await r.json().catch(()=>null);
+    if (data?.ok && Number.isFinite(data.count)) setPresenceCount(data.count);
+  } catch(_) {}
+}
+
+function startPresencePulse() {
+  // первый пинг сразу, затем пульс
+  pingPresence();
+  let timer = setInterval(pingPresence, PULSE_MS);
+
+  // если вкладку разворачивали — обновим число/перезапустим такт
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      refreshPresence();
+      clearInterval(timer);
+      timer = setInterval(pingPresence, PULSE_MS);
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // если на этой странице нет блока — просто ничего не делаем
+  if (document.getElementById('presenceCount')) {
+    startPresencePulse();
+  }
+});
+
+
+
 
 
 function makeHiddenPlaceholderOption(label, selected) {

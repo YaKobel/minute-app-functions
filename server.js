@@ -341,6 +341,51 @@ async function limitTgClicks(chatId) {
   return { action: 'live' };
 }
 
+// ===== Presence (онлайн за текущее окно) =====
+const presence = new Map(); // sessionKey -> Map<clientId, lastTs>
+
+function presenceCleanup() {
+  const now = Date.now();
+  for (const [win, map] of presence.entries()) {
+    for (const [cid, ts] of map.entries()) {
+      if (now - ts > 45_000) map.delete(cid);   // TTL клиента ~45с
+    }
+    if (map.size === 0) presence.delete(win);   // чистим пустые окна
+  }
+}
+
+function presenceTouch(clientId) {
+  const key = windowKey(Date.now());
+  let map = presence.get(key);
+  if (!map) { map = new Map(); presence.set(key, map); }
+  map.set(clientId, Date.now());
+  return map.size;
+}
+
+// ping от клиента + ответ с текущим числом
+app.post('/api/presence/ping', (req, res) => {
+  try {
+    const clientId = String(req.body?.clientId || '').trim();
+    if (!clientId) return res.status(400).json({ ok:false, error:'clientId required' });
+    presenceCleanup();
+    const count = presenceTouch(clientId);
+    return res.json({ ok:true, count });
+  } catch (e) {
+    console.error('/api/presence/ping', e);
+    return res.status(500).json({ ok:false });
+  }
+});
+
+// просто получить текущее число (на всякий)
+app.get('/api/presence', (_req, res) => {
+  presenceCleanup();
+  const key = windowKey(Date.now());
+  const count = presence.get(key)?.size || 0;
+  res.json({ ok:true, count });
+});
+
+// периодическая уборка
+setInterval(presenceCleanup, 30_000);
 
 
 
@@ -856,16 +901,22 @@ app.post('/api/admin/reset-demo', requireKey, async (req, res) => {
   }
 });
 
-// === KeepAlive для Render (чтобы сервер не засыпал) ===
-if (process.env.KEEPALIVE === '1' && PUBLIC_BASE) {
-    console.log('🟢 KEEPALIVE активен: пингуем каждые 50 минут →', PUBLIC_BASE);
-    const ping = () => {
-        fetch(`${PUBLIC_BASE}/healthz`)
-            .then(() => console.log('🕐 keepalive ping OK'))
-            .catch(() => console.warn('⚠️ keepalive ping failed'));
-    };
-    setInterval(ping, 50 * 60 * 1000); // каждые 50 минут
-    ping(); // первый вызов сразу
+// === KeepAlive для Render (не давать уснуть) ===
+if (process.env.KEEPALIVE === '1') {
+  const base = (PUBLIC_BASE || '').replace(/\/+$/, '');
+  console.log('🟢 KEEPALIVE активен: каждые 14 минут', base || '(локально)');
+  const doPing = () => {
+    const targets = [
+      '/healthz',
+      base ? `${base}/healthz` : null,
+    ].filter(Boolean);
+    targets.forEach(u => {
+      fetch(u).then(()=>console.log('🕐 keepalive OK →', u))
+              .catch(()=>console.warn('⚠️ keepalive FAIL →', u));
+    });
+  };
+  setInterval(doPing, 14 * 60 * 1000);
+  doPing();
 }
 
 
