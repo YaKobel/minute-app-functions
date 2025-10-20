@@ -173,6 +173,33 @@ async function startMinuteCountdown(botInstance, chatId) {
 }
 
 
+// Короткий отсчёт до начала окна: редактируем одно сообщение каждую секунду (30→0)
+async function startThirtyCountdown(botInstance, chatId, untilTs) {
+  const fmt = (s) => `00:${String(Math.max(0, s)).padStart(2, '0')}`;
+  const left0 = Math.max(0, Math.ceil((untilTs - Date.now()) / 1000));
+  const startAt = Math.min(left0, 30); // не больше 30 сек
+
+  const sent = await botInstance.sendMessage(
+    chatId,
+    `Через 30 секунд начнётся окно (UTC).\n⏳ Осталось: ${fmt(startAt)}`
+  );
+  const msgId = sent.message_id;
+
+  const timer = setInterval(async () => {
+    const left = Math.max(0, Math.ceil((untilTs - Date.now()) / 1000));
+    const text = left > 0
+      ? `⏳ До начала окна (UTC): ${fmt(left)}`
+      : `✅ Начали! Окно открыто.`;
+    try {
+      await botInstance.editMessageText(text, { chat_id: chatId, message_id: msgId });
+    } catch (_) {}
+
+    if (left <= 0) clearInterval(timer);
+  }, 1000);
+}
+
+
+
 async function readUserProfile(userId) {
   try {
     const snap = await db.collection('users').doc(String(userId)).get();
@@ -539,6 +566,23 @@ app.post('/telegram/webhook', (req, res) => {
   }
 });
 
+// Глобальная синяя кнопка (Chat Menu Button)
+try {
+  const menuUrl = WEBAPP_URL || (PUBLIC_BASE ? `${PUBLIC_BASE}/index.html` : '');
+  if (menuUrl) {
+    await bot.setChatMenuButton({
+      menu_button: {
+        type: 'web_app',
+        text: 'TimeWorld',
+        web_app: { url: menuUrl }
+      }
+    });
+    console.log('✅ Telegram menu button set');
+  }
+} catch (e) { console.error('setChatMenuButton error:', e.message); }
+
+
+
 // ---------- Telegram UI ----------
 const CATEGORIES = [
   { text: '🕊️ Остановим войны', data: 'vote:war' },
@@ -601,15 +645,18 @@ if (bot) {
       // 6-сек. интро (можно выключить — просто закомментируй)
       if (TG_TELEG_INTRO) {
         try {
-          await bot.sendVideo(chatId, TG_TELEG_INTRO, {
-            supports_streaming: true,
-            disable_notification: true,
-          });
+		  await sendAndTrack(chatId, bot.sendVideo, [
+		  TG_TELEG_INTRO,
+		  {
+			  supports_streaming: true,
+			  disable_notification: true
+		  }
+		  ]);
         } catch (_) {}
       }
       const nextLine = buildNextWindowLine();
       await bot.sendMessage(chatId, nextLine);
-      await bot.sendMessage(chatId, 'Выберите намерение на 1 минуту или откройте экраны:', {
+      await sendAndTrack(chatId, bot.sendMessage, ['Выберите намерение на 1 минуту или откройте экраны:', {
         reply_markup: buildStartKeyboard(),
       });
     } catch (e) {
@@ -768,35 +815,95 @@ if (process.env.DEFER_LOOP === '1') {
   }, 30_000);
 }
 
+async function pushBotMessage(chatId, messageId) {
+  const ref = db.collection('subs').doc(String(chatId));
+  await db.runTransaction(async tr => {
+    const snap = await tr.get(ref);
+    const prev = snap.exists && Array.isArray(snap.data().lastMsgs) ? snap.data().lastMsgs : [];
+    const next = [...prev, messageId];
+    // оставить только 2 последних
+    const keep = next.slice(-2);
+    tr.set(ref, { lastMsgs: keep }, { merge: true });
+
+    // удалить всё, что старше
+    const toDelete = next.slice(0, next.length - keep.length);
+    for (const id of toDelete) {
+      try { await bot.deleteMessage(chatId, id); } catch(_) {}
+    }
+  });
+}
+
+// Обёртка над sendMessage / sendAnimation / sendVideo для логирования
+async function sendAndTrack(chatId, fn, argsObj) {
+  const msg = await fn.call(bot, chatId, ...argsObj);
+  if (msg?.message_id) { try { await pushBotMessage(chatId, msg.message_id); } catch(_) {} }
+  return msg;
+}
+
+
+
 // ——— рассылка напоминаний (каждые ~30 сек), включается TG_REMINDER_LOOP=1 ———
 if (bot && process.env.TG_REMINDER_LOOP === '1') {
   console.log('⏰ TG reminders loop ON');
   setInterval(async () => {
     try {
-      const now = new Date();
-      const next = nextWindowUTC(now);          // уже есть в файле
-      const diffMin = Math.floor((next - now) / 60000);
-      //if (![60, 5].includes(diffMin)) return;
-	  if (![60, 5, 0].includes(diffMin)) return; // шлёт и когда осталось 0 минут
+      const now   = new Date();
+      const next  = nextWindowUTC(now);
+      const diffMs  = next - now;
+      const diffMin = Math.floor(diffMs / 60000);
+      const diffSec = Math.floor(diffMs / 1000);
+
+      // интересуют 60 мин, 5 мин, и промежуток 30..0 секунд (включая 0)
+      const phase60  = (diffMin === 60);
+      const phase5   = (diffMin === 5);
+      const phase30s = (diffSec <= 30 && diffSec >= 0);
+
+      if (!phase60 && !phase5 && !phase30s) return;
 
       const winKey = windowIso(next);
       const subsSnap = await db.collection('subs').where('on', '==', true).get();
       if (subsSnap.empty) return;
 
-      const field = diffMin === 60 ? 'last60' : 'last5';
-      const msg   = diffMin === 60
-        ? 'Через 60 минут начнётся окно (UTC).'
-        : 'Через 5 минут начнётся окно (UTC).';
+      // тексты
+      const text60 = 'Через 60 минут начнётся окно (UTC).';
+      const text5  = 'Через 5 минут начнётся окно (UTC).';
 
-      // отправляем и помечаем, что пользователю напомнили именно про это окно
       const batch = db.batch();
+
       for (const doc of subsSnap.docs) {
-        const d = doc.data() || {};
-        if (d[field] === winKey) continue;      // уже напоминали для этого окна
-        const chatId = doc.id;
-        try { await bot.sendMessage(chatId, `${msg}\n` + buildNextWindowLine()); } catch {}
-        batch.set(doc.ref, { [field]: winKey }, { merge: true });
+        const s = doc.data() || {};
+        const chatId = String(doc.id);
+
+        if (phase60) {
+          if (s.last60 === winKey) continue;                // уже слали для этого окна
+          try { await bot.sendMessage(chatId, `${text60}\n` + buildNextWindowLine()); } catch {}
+          batch.set(doc.ref, { last60: winKey }, { merge: true });
+          continue;
+        }
+
+        if (phase5) {
+          if (s.last5 === winKey) continue;
+          try {
+            await bot.sendMessage(chatId, `${text5}\n` + buildNextWindowLine(), {
+              disable_web_page_preview: true,
+              reply_markup: { inline_keyboard: [[
+                { text: 'Открыть приложение', url: PUBLIC_BASE || 'https://minute-app-functions.onrender.com' }
+              ]] }
+            });
+          } catch {}
+          batch.set(doc.ref, { last5: winKey }, { merge: true });
+          continue;
+        }
+
+        // 30..0 сек — ПО ОДНОМУ РАЗУ НА ОКНО: запускаем мини-отсчёт
+        if (phase30s) {
+          if (s.last30 === winKey) continue;
+          try { await startThirtyCountdown(bot, chatId, next.getTime()); } catch {}
+          batch.set(doc.ref, { last30: winKey }, { merge: true });
+          continue;
+        }
       }
+
       await batch.commit();
     } catch (e) {
       console.error('reminders loop error:', e.message);
