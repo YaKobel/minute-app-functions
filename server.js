@@ -641,27 +641,24 @@ if (bot) {
   // /start (или /menu): короткая заставка + текст «следующее окно» + клавиатура
   bot.onText(/^\/(start|menu)$/i, async (msg) => {
     const chatId = msg.chat.id;
-    try {
-      // 6-сек. интро (можно выключить — просто закомментируй)
-      if (TG_TELEG_INTRO) {
-        try {
-		  await sendAndTrack(chatId, bot.sendVideo, [
-		  TG_TELEG_INTRO,
-		  {
-			  supports_streaming: true,
-			  disable_notification: true
-		  }
-		  ]);
-        } catch (_) {}
-      }
-      const nextLine = buildNextWindowLine();
-      await bot.sendMessage(chatId, nextLine);
-      await sendAndTrack(chatId, bot.sendMessage, ['Выберите намерение на 1 минуту или откройте экраны:', {
-        reply_markup: buildStartKeyboard(),
-      });
-    } catch (e) {
-      console.error('start error:', e.message);
+  
+    // 6-сек. интро (можно выключить — просто закомментируй)
+    if (TG_TELEG_INTRO) {
+      try {
+        await sendAndTrack(
+          chatId,
+          bot.sendVideo,
+          [ TG_TELEG_INTRO, { supports_streaming: true, disable_notification: true } ]
+        );
+      } catch (_) {}
     }
+  
+    const nextLine = buildNextWindowLine();
+    await bot.sendMessage(chatId, nextLine);
+    await sendAndTrack(chatId, bot.sendMessage, [
+      'Выберите намерение на 1 минуту или откройте экраны:',
+      { reply_markup: buildStartKeyboard() }
+    ]);
   });
 
   // /stats — открыть экран статистики
