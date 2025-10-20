@@ -10,6 +10,7 @@
 
 
   "minute.next": "Следующее окно (UTC)",
+  "presence.now": "Сейчас в онлайне",
   "minute.choose": "Выбери намерение",
 
   "intent.war": "Остановим войны",

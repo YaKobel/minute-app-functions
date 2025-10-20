@@ -13,6 +13,7 @@
   "mode.note.defer":  "“Deferred” mode: the vote will be counted in the next window.",
 
   "minute.next": "Next window (UTC)",
+  "presence.now": "People online now",
   "minute.choose": "Choose an intention",
   "intent.war": "Stop the wars",
   "intent.climate": "World without disasters",
