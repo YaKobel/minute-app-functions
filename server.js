@@ -689,7 +689,7 @@ if (bot) {
     
     const remOn = await getRemindersOn(chatId);
     await sendAndTrack(chatId, bot.sendMessage, [
-      'Откройте приложение → перейдите в «Профиль» → затем откройте «Главная» и выберите одно из четырёх намерений → включите режим «Лайв» → нажмите на круг. Ваш голос будет засчитан через 60 сек. Подробности — в разделе «О проекте»',
+      'Откройте приложение → перейдите в «Профиль» → затем откройте «Главная» и выберите одно из четырёх намерений → включите режим «Лайв» → нажмите на круг. Ваш голос будет засчитан через 60 сек. Подробности — в разделе «О проекте». Для повторного запуска основного меню используйте команду /start',
       { reply_markup: buildStartKeyboard(remOn) },
     ]);
   }); // ←←← ЭТОЙ СТРОКИ НЕ ХВАТАЛО
@@ -744,7 +744,7 @@ if (bot) {
           'Поддержать проект:\n' +
           '• Monobank: send.monobank.ua/jar/4zfsoPCtfz\n' +
           '• OZON CLIENT: 2204 3201 1733 0961\n' +
-          ///'• ⭐ Telegram Stars: нажмите «Stars» в профиле бота\n\n' +
+          '• ⭐ Telegram Stars: используйте команду /donate — откроется окно перевода звёзд в Telegram\n\n' +
           'Спасибо за поддержку! ❤️'
         ]);
         return;
@@ -811,6 +811,97 @@ if (bot) {
     }
   });
 } // <— ВАЖНО: никаких else тут не нужно (варнинг уже был выше при пустом токене)
+
+// ===== DONATE (Telegram Stars) =====
+
+// /donate — меню с вариантами звёзд
+bot.onText(/^\/donate$/i, async (msg) => {
+  const chatId = msg.chat.id;
+  const kb = {
+    inline_keyboard: [
+      [{ text: 'Поддержать на 100 ⭐️', callback_data: 'donate:100' }],
+      [{ text: 'Поддержать на 250 ⭐️', callback_data: 'donate:250' }],
+      [{ text: 'Поддержать на 500 ⭐️', callback_data: 'donate:500' }],
+    ],
+  };
+  await bot.sendMessage(chatId, 'Спасибо за поддержку! Выберите сумму:', { reply_markup: kb });
+});
+
+// функция для выставления инвойса
+async function sendStarsInvoice(chatId, amount) {
+  const title = `Пожертвование ${amount} ⭐️`;
+  const description = 'Поддержка проекта TimeWorld';
+  const payload = `donate:${amount}:${Date.now()}`;
+  const currency = 'XTR';
+  const prices = [{ label: `${amount} Stars`, amount }];
+
+  await bot.sendInvoice(
+    chatId,
+    title,
+    description,
+    payload,
+    '', // provider_token не нужен для Stars
+    currency,
+    prices,
+    {
+      photo_url: 'https://yakobel.github.io/minute-app-functions/media/app_teleg.mp4', // можно поменять
+      need_name: false,
+      need_email: false,
+      is_flexible: false,
+    }
+  );
+}
+
+// обработка нажатия кнопок доната
+bot.on('callback_query', async (q) => {
+  const data = q.data || '';
+  const chatId = q.message?.chat?.id;
+  if (!chatId) return;
+
+  if (data.startsWith('donate:')) {
+    const amount = Number(data.split(':')[1] || 0);
+    if (amount > 0) {
+      try {
+        await bot.answerCallbackQuery(q.id);
+        await sendStarsInvoice(chatId, amount);
+      } catch (e) {
+        console.error('donate invoice error:', e.message);
+        try {
+          await bot.answerCallbackQuery(q.id, {
+            text: 'Ошибка. Попробуйте ещё раз',
+            show_alert: true,
+          });
+        } catch {}
+      }
+    }
+    return;
+  }
+});
+
+// подтверждение предчекаута
+bot.on('pre_checkout_query', async (query) => {
+  try {
+    await bot.answerPreCheckoutQuery(query.id, true);
+  } catch (e) {
+    console.error('pre_checkout error:', e.message);
+    try {
+      await bot.answerPreCheckoutQuery(query.id, false, 'Ошибка. Попробуйте позже.');
+    } catch {}
+  }
+});
+
+// успешная оплата
+bot.on('message', async (msg) => {
+  const sp = msg.successful_payment;
+  if (!sp) return;
+  try {
+    await bot.sendMessage(msg.chat.id, '⭐️ Спасибо! Ваше пожертвование получено 🙏');
+  } catch (e) {
+    console.error('thanks error:', e.message);
+  }
+});
+
+
 
 // WebApp → sendData: переключение колокольчика и пр.
 if (bot) {
