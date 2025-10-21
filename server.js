@@ -582,12 +582,12 @@ app.post('/telegram/webhook', (req, res) => {
 
 
 // ---------- Telegram UI ----------
-const CATEGORIES = [
-  { text: '🕊️ Остановим войны', data: 'vote:war' },
-  { text: '🌍 Мир без катастроф', data: 'vote:climate' },
-  { text: '💖 Личное счастье', data: 'vote:personal' },
-  { text: '🤝 Помочь Близким', data: 'vote:family' },
-];
+///const CATEGORIES = [
+///  { text: '🕊️ Остановим войны', data: 'vote:war' },
+///  { text: '🌍 Мир без катастроф', data: 'vote:climate' },
+///  { text: '💖 Личное счастье', data: 'vote:personal' },
+///  { text: '🤝 Помочь Близким', data: 'vote:family' },
+///];
 
 function buildStartKeyboard(remOn = false) {
   const base = WEBAPP_URL || (PUBLIC_BASE ? `${PUBLIC_BASE}/index.html` : null);
@@ -609,12 +609,12 @@ function buildStartKeyboard(remOn = false) {
         : { text: 'ℹ️ О проекте', callback_data: 'about:text' },
     ],
     [
-      { text: '💙 Поддержать', callback_data: 'donate:text' },
-      base && { text: '📊 Статистика', web_app: { url: `${base}?screen=stats` } },
+      { text: '❤️ Поддержать', callback_data: 'donate:text' },
+     /// base && { text: '📊 Статистика', web_app: { url: `${base}?screen=stats` } },
     ].filter(Boolean),
     [
-      base && { text: '👤 Профиль', web_app: { url: base.replace('index.html', 'profile.html') } },
-      base && { text: '🏁 Открыть приложение', web_app: { url: base } },
+      ///base && { text: '👤 Профиль', web_app: { url: base.replace('index.html', 'profile.html') } },
+      base && { text: '⏰ Открыть приложение', web_app: { url: base } },
     ].filter(Boolean),
   ];
 
@@ -719,10 +719,11 @@ if (bot) {
         await bot.answerCallbackQuery(query.id);
         await sendAndTrack(chatId, bot.sendMessage, [
           'Поддержать проект:\n' +
-          '• YooMoney: https://yoomoney.ru/to/XXXX\n' +
-          '• CloudTips: https://pay.cloudtips.ru/XXXX\n' +
+          '• Monobank: https://send.monobank.ua/jar/4zfsoPCtfz\n' +
+          '• OZON CLIENT: 2204 3201 1733 0961\n' +
           '• ⭐ Telegram Stars: нажмите «Stars» в профиле бота\n\n' +
-          'Спасибо за поддержку! 💙'
+          'Спасибо за поддержку! ❤️'
+		  'Обратная связь: grapeess@gmail.com💙'
         ]);
         return;
       }
