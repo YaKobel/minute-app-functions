@@ -723,7 +723,6 @@ if (bot) {
           '• OZON CLIENT: 2204 3201 1733 0961\n' +
           '• ⭐ Telegram Stars: нажмите «Stars» в профиле бота\n\n' +
           'Спасибо за поддержку! ❤️'
-		  'Обратная связь: grapeess@gmail.com💙'
         ]);
         return;
       }
