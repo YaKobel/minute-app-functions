@@ -827,30 +827,33 @@ bot.onText(/^\/donate$/i, async (msg) => {
   await bot.sendMessage(chatId, 'Спасибо за поддержку! Выберите сумму:', { reply_markup: kb });
 });
 
-// функция для выставления инвойса
+// функция для выставления инвойса (Telegram Stars / XTR)
 async function sendStarsInvoice(chatId, amount) {
-  const title = `Пожертвование ${amount} ⭐️`;
+  const title       = `Пожертвование ${amount} ⭐️`;
   const description = 'Поддержка проекта TimeWorld';
-  const payload = `donate:${amount}:${Date.now()}`;
-  const currency = 'XTR';
-  const prices = [{ label: `${amount} Stars`, amount }];
+  const payload     = `donate:${amount}:${Date.now()}`;
+  const currency    = 'XTR';
+  const prices      = [{ label: `${amount} Stars`, amount }];
 
+  // ВАЖНО: НИЧЕГО не передаём как provider_token (для Stars он не нужен)
   await bot.sendInvoice(
     chatId,
     title,
     description,
     payload,
-    '', // provider_token не нужен для Stars
+    undefined,                  // <-- ключевой момент: никакого provider_token
     currency,
     prices,
     {
-      photo_url: 'https://yakobel.github.io/minute-app-functions/media/app_teleg.mp4', // можно поменять
+      // Фото должно быть картинкой
+      photo_url: 'https://yakobel.github.io/minute-app-functions/media/donate.png',
       need_name: false,
       need_email: false,
       is_flexible: false,
     }
   );
 }
+
 
 // обработка нажатия кнопок доната
 bot.on('callback_query', async (q) => {
