@@ -589,34 +589,57 @@ app.post('/telegram/webhook', (req, res) => {
 ///  { text: '🤝 Помочь Близким', data: 'vote:family' },
 ///];
 
+///function buildStartKeyboard(remOn = false) {
+///  const base = WEBAPP_URL || (PUBLIC_BASE ? `${PUBLIC_BASE}/index.html` : null);
+///  const bellText = remOn ? '🔔 Напоминание: ВКЛ' : '🔕 Напоминание: ВЫКЛ';
+///
+///  const kb = [
+///    [
+///      { text: CATEGORIES[0].text, callback_data: CATEGORIES[0].data },
+///      { text: CATEGORIES[1].text, callback_data: CATEGORIES[1].data },
+///    ],
+///    [
+///      { text: CATEGORIES[2].text, callback_data: CATEGORIES[2].data },
+///      { text: CATEGORIES[3].text, callback_data: CATEGORIES[3].data },
+///    ],
+///    [
+///      { text: bellText, callback_data: 'remind:toggle' },
+///      base
+///        ? { text: 'ℹ️ О проекте', web_app: { url: `${base}?screen=about` } }
+///        : { text: 'ℹ️ О проекте', callback_data: 'about:text' },
+///    ],
+///    [
+///      { text: '❤️ Поддержать', callback_data: 'donate:text' },
+///      base && { text: '📊 Статистика', web_app: { url: `${base}?screen=stats` } },
+///    ].filter(Boolean),
+///    [
+///      base && { text: '👤 Профиль', web_app: { url: base.replace('index.html', 'profile.html') } },
+///      base && { text: '⏰ Открыть приложение', web_app: { url: base } },
+///    ].filter(Boolean),
+///  ];
+///
+///  return { inline_keyboard: kb };
+///}
+
 function buildStartKeyboard(remOn = false) {
   const base = WEBAPP_URL || (PUBLIC_BASE ? `${PUBLIC_BASE}/index.html` : null);
   const bellText = remOn ? '🔔 Напоминание: ВКЛ' : '🔕 Напоминание: ВЫКЛ';
 
   const kb = [
+    // 1) Переключатель напоминаний
+    [{ text: bellText, callback_data: 'remind:toggle' }],
+
+    // 2) О проекте + Поддержать
     [
-      { text: CATEGORIES[0].text, callback_data: CATEGORIES[0].data },
-      { text: CATEGORIES[1].text, callback_data: CATEGORIES[1].data },
-    ],
-    [
-      { text: CATEGORIES[2].text, callback_data: CATEGORIES[2].data },
-      { text: CATEGORIES[3].text, callback_data: CATEGORIES[3].data },
-    ],
-    [
-      { text: bellText, callback_data: 'remind:toggle' },
       base
         ? { text: 'ℹ️ О проекте', web_app: { url: `${base}?screen=about` } }
         : { text: 'ℹ️ О проекте', callback_data: 'about:text' },
-    ],
-    [
       { text: '❤️ Поддержать', callback_data: 'donate:text' },
-     /// base && { text: '📊 Статистика', web_app: { url: `${base}?screen=stats` } },
-    ].filter(Boolean),
-    [
-      ///base && { text: '👤 Профиль', web_app: { url: base.replace('index.html', 'profile.html') } },
-      base && { text: '⏰ Открыть приложение', web_app: { url: base } },
-    ].filter(Boolean),
-  ];
+    ],
+
+    // 3) Открыть приложение (если есть base)
+    base ? [{ text: '⏰ Приложение', web_app: { url: base } }] : null,
+  ].filter(Boolean);
 
   return { inline_keyboard: kb };
 }
@@ -666,7 +689,7 @@ if (bot) {
     
     const remOn = await getRemindersOn(chatId);
     await sendAndTrack(chatId, bot.sendMessage, [
-      'Выберите намерение на 1 минуту или откройте экраны:',
+      'Откройте приложение → перейдите на вкладку Главная → откройте Профиль → выберите одно из 4 намерений → включите режим «Лайв» → нажмите на круг.',
       { reply_markup: buildStartKeyboard(remOn) },
     ]);
   }); // ←←← ЭТОЙ СТРОКИ НЕ ХВАТАЛО
@@ -722,7 +745,8 @@ if (bot) {
           '• Monobank: https://send.monobank.ua/jar/4zfsoPCtfz\n' +
           '• OZON CLIENT: 2204 3201 1733 0961\n' +
           '• ⭐ Telegram Stars: нажмите «Stars» в профиле бота\n\n' +
-          'Спасибо за поддержку! ❤️'
+          'Спасибо за поддержку! ❤️' +
+          '\nОбратная связь: grapeess@gmail.com 💙'
         ]);
         return;
       }
