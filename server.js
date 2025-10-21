@@ -744,7 +744,7 @@ if (bot) {
           'Поддержать проект:\n' +
           '• Monobank: send.monobank.ua/jar/4zfsoPCtfz\n' +
           '• OZON CLIENT: 2204 3201 1733 0961\n' +
-          ///'• ⭐ Telegram Stars: используйте команду /donate — откроется окно перевода звёзд в Telegram\n\n' +
+          '• ⭐ Telegram Stars: используйте команду /donate — откроется окно перевода звёзд в Telegram\n\n' +
           'Спасибо за поддержку! ❤️'
         ]);
         return;
@@ -893,16 +893,44 @@ bot.on('pre_checkout_query', async (query) => {
   }
 });
 
-// успешная оплата
+// успешная оплата (Stars)
 bot.on('message', async (msg) => {
   const sp = msg.successful_payment;
   if (!sp) return;
+
   try {
+    // 1️⃣ Отправляем благодарность пользователю
     await bot.sendMessage(msg.chat.id, '⭐️ Спасибо! Ваше пожертвование получено 🙏');
+
+    // 2️⃣ Уведомление админу (если указан ADMIN_CHAT_ID в Environment)
+    const adminId = Number(process.env.ADMIN_CHAT_ID || 0);
+    if (adminId) {
+      const text =
+        `⭐ New Stars donation\n` +
+        `From: ${msg.from?.id}\n` +
+        `Amount: ${sp.total_amount} ${sp.currency}\n` +
+        `Payload: ${sp.invoice_payload || '—'}`;
+      try { await bot.sendMessage(adminId, text); } catch {}
+    }
+
+    // 3️⃣ (необязательно) Сохраняем запись о донате в Firestore
+    try {
+      await db.collection('donations').add({
+        userId: String(msg.from?.id || ''),
+        amount: sp.total_amount,
+        currency: sp.currency,
+        payload: sp.invoice_payload || null,
+        at: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      console.error('save donation error:', e.message);
+    }
+
   } catch (e) {
     console.error('thanks error:', e.message);
   }
 });
+
 
 
 
