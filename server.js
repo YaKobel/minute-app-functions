@@ -638,7 +638,7 @@ function buildStartKeyboard(remOn = false) {
     ],
 
     // 3) Открыть приложение (если есть base)
-    base ? [{ text: '⏰ Приложение', web_app: { url: base } }] : null,
+    base ? [{ text: '⏰ Приложение Time World', web_app: { url: base } }] : null,
   ].filter(Boolean);
 
   return { inline_keyboard: kb };
@@ -689,7 +689,8 @@ if (bot) {
     
     const remOn = await getRemindersOn(chatId);
     await sendAndTrack(chatId, bot.sendMessage, [
-      'Откройте приложение → перейдите в «Профиль» → затем откройте «Главная» и выберите одно из четырёх намерений → включите режим «Лайв» → нажмите на круг.Ваш голос будет засчитан через 60 сек.',
+      'Откройте приложение → перейдите в «Профиль» → затем откройте «Главная» и выберите одно из четырёх намерений → включите режим «Лайв» → нажмите на круг.
+	  Ваш голос будет засчитан через 60 сек.',
       { reply_markup: buildStartKeyboard(remOn) },
     ]);
   }); // ←←← ЭТОЙ СТРОКИ НЕ ХВАТАЛО
@@ -742,7 +743,7 @@ if (bot) {
         await bot.answerCallbackQuery(query.id);
         await sendAndTrack(chatId, bot.sendMessage, [
           'Поддержать проект:\n' +
-          '• Monobank: https://send.monobank.ua/jar/4zfsoPCtfz\n' +
+          '• Monobank: send.monobank.ua/jar/4zfsoPCtfz\n' +
           '• OZON CLIENT: 2204 3201 1733 0961\n' +
           ///'• ⭐ Telegram Stars: нажмите «Stars» в профиле бота\n\n' +
           'Спасибо за поддержку! ❤️'
