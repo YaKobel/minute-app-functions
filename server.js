@@ -554,14 +554,11 @@ if (TG_TOKEN) {
   try {
     const menuUrl = WEBAPP_URL || (PUBLIC_BASE ? `${PUBLIC_BASE}/index.html` : '');
     if (menuUrl) {
-      await bot.setChatMenuButton({
-        menu_button: {
-          type: 'web_app',
-          text: 'TimeWorld',
-          web_app: { url: menuUrl }
-        }
-      });
-      console.log('✅ Chat Menu Button установлен');
+      bot.setChatMenuButton({
+        menu_button: { type: 'web_app', text: 'TimeWorld', web_app: { url: menuUrl } }
+      })
+      .then(() => console.log('✅ Chat Menu Button установлен'))
+      .catch(e => console.error('setChatMenuButton error:', e.message));
     }
   } catch (e) {
     console.error('setChatMenuButton error:', e.message);
@@ -592,8 +589,10 @@ const CATEGORIES = [
   { text: '🤝 Помочь Близким', data: 'vote:family' },
 ];
 
-function buildStartKeyboard() {
+function buildStartKeyboard(remOn = false) {
   const base = WEBAPP_URL || (PUBLIC_BASE ? `${PUBLIC_BASE}/index.html` : null);
+  const bellText = remOn ? '🔔 Напоминание: ВКЛ' : '🔕 Напоминание: ВЫКЛ';
+
   const kb = [
     [
       { text: CATEGORIES[0].text, callback_data: CATEGORIES[0].data },
@@ -603,23 +602,26 @@ function buildStartKeyboard() {
       { text: CATEGORIES[2].text, callback_data: CATEGORIES[2].data },
       { text: CATEGORIES[3].text, callback_data: CATEGORIES[3].data },
     ],
+    [
+      { text: bellText, callback_data: 'remind:toggle' },
+      base
+        ? { text: 'ℹ️ О проекте', web_app: { url: `${base}?screen=about` } }
+        : { text: 'ℹ️ О проекте', callback_data: 'about:text' },
+    ],
+    [
+      { text: '💙 Поддержать', callback_data: 'donate:text' },
+      base && { text: '📊 Статистика', web_app: { url: `${base}?screen=stats` } },
+    ].filter(Boolean),
+    [
+      base && { text: '👤 Профиль', web_app: { url: base.replace('index.html', 'profile.html') } },
+      base && { text: '🏁 Открыть приложение', web_app: { url: base } },
+    ].filter(Boolean),
   ];
-  
-  // ряд с напоминаниями и ссылкой "О проекте"
-  kb.push([
-    { text: '🔔 Напоминание', callback_data: 'remind:toggle' },
-    base
-      ? { text: 'ℹ️ О проекте', web_app: { url: `${base}?screen=about` } }
-      : { text: 'ℹ️ О проекте', callback_data: 'about:text' },
-  ]);
-  if (base) {
-    kb.push([
-      { text: '📊 Статистика', web_app: { url: `${base}?screen=stats` } },
-      { text: '👤 Профиль', web_app: { url: base.replace('index.html', 'profile.html') } },
-    ]);
-  }
+
   return { inline_keyboard: kb };
 }
+
+
 
 async function toggleReminders(chatId) {
   const ref = db.collection('subs').doc(String(chatId));
@@ -630,6 +632,12 @@ async function toggleReminders(chatId) {
   return next;
 }
 function windowIso(ts) { return new Date(ts).toISOString(); }
+
+async function getRemindersOn(chatId) {
+  const snap = await db.collection('subs').doc(String(chatId)).get();
+  return snap.exists ? !!snap.data().on : false;
+}
+
 
 // Медиа для Telegram-интро (короткий mp4/гиф)
 const TG_TELEG_INTRO =
@@ -652,13 +660,14 @@ if (bot) {
         );
       } catch (_) {}
     }
-  
+	
     const nextLine = buildNextWindowLine();
-    await sendAndTrack(chatId, bot.sendMessage, [ nextLine ]);
+    await sendAndTrack(chatId, bot.sendMessage, [nextLine]);
     
+    const remOn = await getRemindersOn(chatId);
     await sendAndTrack(chatId, bot.sendMessage, [
       'Выберите намерение на 1 минуту или откройте экраны:',
-      { reply_markup: buildStartKeyboard() }
+      { reply_markup: buildStartKeyboard(remOn) },
     ]);
   }); // ←←← ЭТОЙ СТРОКИ НЕ ХВАТАЛО
 
@@ -681,15 +690,44 @@ if (bot) {
       const chatId = query?.message?.chat?.id;
       const data   = query?.data || '';
       if (!chatId) return;
-
-      // 🔔 подписка на напоминания
+      
+      // 🔔 переключение напоминаний + перерисовка клавиатуры
       if (data === 'remind:toggle') {
         const on = await toggleReminders(chatId);
-        const status = on ? 'включены' : 'выключены';
-        await bot.answerCallbackQuery(query.id, { text: `Напоминания ${status}`, show_alert: false });
-        await bot.sendMessage(chatId, buildNextWindowLine());
+        await bot.answerCallbackQuery(query.id, { text: on ? 'Напоминания включены' : 'Напоминания выключены' });
+      
+        const remOn = await getRemindersOn(chatId);
+        await sendAndTrack(chatId, bot.sendMessage, [
+          buildNextWindowLine(),
+          { reply_markup: buildStartKeyboard(remOn) },
+        ]);
         return;
       }
+      
+      // ℹ️ «О проекте» (текстовый вариант, если нет WEBAPP_URL)
+      if (data === 'about:text') {
+        await bot.answerCallbackQuery(query.id);
+        await sendAndTrack(chatId, bot.sendMessage, [
+          'MINUTE — короткая коллективная минута внимания 3 раза в день.\n' +
+          'Окна: 00:00 / 08:00 / 16:00 (UTC). Выберите намерение и отмечайтесь.'
+        ]);
+        return;
+      }
+      
+      // 💙 Донаты — отправляем один информативный пост
+      if (data === 'donate:text') {
+        await bot.answerCallbackQuery(query.id);
+        await sendAndTrack(chatId, bot.sendMessage, [
+          'Поддержать проект:\n' +
+          '• YooMoney: https://yoomoney.ru/to/XXXX\n' +
+          '• CloudTips: https://pay.cloudtips.ru/XXXX\n' +
+          '• ⭐ Telegram Stars: нажмите «Stars» в профиле бота\n\n' +
+          'Спасибо за поддержку! 💙'
+        ]);
+        return;
+      }
+
+
 
       // ℹ️ «О проекте» (если нет WEBAPP_URL)
       if (data === 'about:text') {
@@ -764,10 +802,10 @@ if (bot) {
 
       if (payload.type === 'reminder:toggle') {
         const on = await toggleReminders(chatId);
-        await bot.sendMessage(
-          chatId,
-          on ? '🔔 Напоминания включены.\n' + buildNextWindowLine()
-             : '🔕 Напоминания выключены.'
+        await sendAndTrack(
+          chatId, bot.sendMessage,
+          [ on ? '🔔 Напоминания включены.\n' + buildNextWindowLine()
+               : '🔕 Напоминания выключены.' ]
         );
       }
     } catch (e) {
@@ -819,8 +857,8 @@ async function pushBotMessage(chatId, messageId) {
     const snap = await tr.get(ref);
     const prev = snap.exists && Array.isArray(snap.data().lastMsgs) ? snap.data().lastMsgs : [];
     const next = [...prev, messageId];
-    // оставить только 2 последних
-    const keep = next.slice(-2);
+    // оставить только 10 последних (видео + «след. окно» + клавиатура)
+    const keep = next.slice(-10);
     tr.set(ref, { lastMsgs: keep }, { merge: true });
 
     // удалить всё, что старше
