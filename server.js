@@ -642,7 +642,6 @@ if (bot) {
   // /start (или /menu): короткая заставка + текст «следующее окно» + клавиатура
   bot.onText(/^\/(start|menu)$/i, async (msg) => {
     const chatId = msg.chat.id;
-  
     // 6-сек. интро (можно выключить — просто закомментируй)
     if (TG_TELEG_INTRO) {
       try {
@@ -661,6 +660,7 @@ if (bot) {
       'Выберите намерение на 1 минуту или откройте экраны:',
       { reply_markup: buildStartKeyboard() }
     ]);
+  }); // ←←← ЭТОЙ СТРОКИ НЕ ХВАТАЛО
 
   // /stats — открыть экран статистики
   bot.onText(/^\/stats$/i, async (msg) => {
