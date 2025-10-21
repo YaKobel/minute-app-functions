@@ -15,7 +15,11 @@ import TelegramBot from 'node-telegram-bot-api';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ---------- Firebase Admin ----------
+// --- Debug helpers ---
+const DEBUG_NEXT_WINDOW_MIN = Number(process.env.DEBUG_NEXT_WINDOW_MIN || '0'); // например 1
+// in-memory флаги, чтобы не спамить дубли каждым деплоем
+const sentFlags = new Map(); // key: `${chatId}:${ts}`, value: {m5:true/false, s30:true/false}
+
 // ---------- Firebase Admin ----------
 (function initFirebase() {
   try {
@@ -660,6 +664,35 @@ if (bot) {
       { reply_markup: buildStartKeyboard() }
     ]);
   });
+  
+  // /test N  -> следующее окно через N минут (только для теста)
+  if (bot) {
+    bot.onText(/^\/test\s+(\d+)$/i, async (msg, m) => {
+      const chatId = msg.chat.id;
+      const n = Math.max(1, Math.min(60, Number(m[1])));
+      const nextTs = Date.now() + n*60_000;
+      const k = mkKey(chatId, nextTs);
+      sentFlags.delete(k);
+      await bot.sendMessage(chatId, `Тест: следующее окно через ${n} мин (UTC ${new Date(nextTs).toISOString().slice(11,16)}).`);
+      // «мягкий» loop 1 мин: дергаем 5м и 30с напоминания
+      const stopAt = Date.now() + n*60_000 + 35_000;
+      (async function loop() {
+        if (Date.now() > stopAt) return;
+        await ensureReminder5m(bot, chatId, nextTs);
+        await ensureReminder30s(bot, chatId, nextTs);
+        setTimeout(loop, 1000);
+      })();
+    });
+  }
+
+  // если включён debug — форсируем следующее окно
+  const dbgTs = getDebugNextWindowTs();
+  const realNextTs = dbgTs || nextTs;
+  
+  // для каждого подписчика:
+  await ensureReminder5m(bot, chatId, realNextTs);
+  await ensureReminder30s(bot, chatId, realNextTs);
+
 
   // /stats — открыть экран статистики
   bot.onText(/^\/stats$/i, async (msg) => {
