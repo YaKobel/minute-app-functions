@@ -58,8 +58,16 @@
 
   "profile.save": "Сохранить профиль",
   "profile.note": "",
-
   "toast.saved": "Профиль сохранён",
+  
+  "vote.ok": "Голос засчитан: {{label}}",
+  "minute.done": "Минута завершена",
+  "intent.war": "Остановим войны",
+  "intent.climate": "Мир без катастроф",
+  "intent.personal": "Личное счастье",
+  "intent.family": "Помочь Близким",
+  "success.title": "Спасибо!",
+  "success.subtitle": "Ваш голос учтён",
   
   "regions.north": "Север",
   "regions.south": "Юг",

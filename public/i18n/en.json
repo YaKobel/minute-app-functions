@@ -60,6 +60,15 @@
   "profile.save": "Save profile",
   "profile.note": "",
   "toast.saved": "Profile saved",
+  
+  "vote.ok": "Vote counted: {{label}}",
+  "minute.done": "Minute is over",
+  "intent.war": "Stop wars",
+  "intent.climate": "World without disasters",
+  "intent.personal": "Personal happiness",
+  "intent.family": "Help loved ones",
+  "success.title": "Thank you!",
+  "success.subtitle": "Your vote was counted",
 
   "regions.north": "North",
   "regions.south": "South",
