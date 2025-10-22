@@ -538,9 +538,12 @@ body.modal-open { overflow: hidden; }
   gap: 8px;
   scrollbar-width: thin;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;                /* <<< чтобы свайпалcя по оси X */
+  overscroll-behavior-inline: contain;/* <<< не «тянем» всю страницу */
 }
 .tabs-scroll .tab {
   white-space: nowrap;
   flex: 0 0 auto;
 }
+
 

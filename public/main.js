@@ -430,17 +430,41 @@ function renderTopList({ box, items, limit = 4, makeLabel }) {
 // ========= Статистика =========
 function initStats() {
   let currentPeriod = 'day';
-  const tabs = document.querySelectorAll('#periodTabs [data-period]');
+
+  const scroller = document.getElementById('periodTabs');
+  const tabs = scroller ? scroller.querySelectorAll('[data-period]') : [];
+
+  function snapTo(btn, smooth = true) {
+    if (!btn || !scroller) return;
+    // прокручиваем так, чтобы активная была по центру (или ближайше)
+    btn.scrollIntoView({
+      behavior: smooth ? 'smooth' : 'auto',
+      inline: 'center',
+      block: 'nearest'
+    });
+  }
+
   tabs.forEach(btn => {
     btn.addEventListener('click', () => {
       tabs.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentPeriod = btn.dataset.period;
       loadStats(currentPeriod);
-    });
+      snapTo(btn);                 // автодокрутка после клика
+    }, { passive: true });
   });
+
+  // первичная активная (если уже отрисована разметкой), иначе 'day'
+  const preActive = scroller?.querySelector('.active[data-period]') || scroller?.querySelector('[data-period]');
+  if (preActive) {
+    currentPeriod = preActive.dataset.period || 'day';
+    // автодокрутить к активной сразу
+    setTimeout(() => snapTo(preActive, false), 0);
+  }
+
   loadStats(currentPeriod);
 }
+
 
 async function loadStats(period = 'day') {
   const elTotal     = document.getElementById('kpi-total');
