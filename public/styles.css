@@ -529,6 +529,27 @@ body.modal-open { overflow: hidden; }
   box-shadow: 0 10px 40px rgba(0,0,0,.5);
 }
 
+/* toast */
+.toast{
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(25,25,28,.95);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+  z-index: 9999;
+}
+.toast.toast--show{
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
 
 
 #remindBtn { display: none !important; }

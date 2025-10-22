@@ -262,17 +262,20 @@ function applyI18n(root = document) {
 }
 
 
-// Локализованная подпись категории для тоста
-function categoryTitle(cat) {
-  const mapKey = {
-    war: 'categories.war',
-    climate: 'categories.climate',
-    personal: 'categories.personal',
-    family: 'categories.family'
+// === category label (локализованная подпись) ===
+function categoryLabel(key) {
+  // нормализуем ключ на всякий
+  const k = String(key || '').toLowerCase();
+
+  // пытаемся достать из словаря i18n (ru/en/uk) ключи cats.*
+  // если в твоём t() нет интерполяции, просто возвращаем строку
+  const map = {
+    war:      t('cats.war')      || 'Остановим войны',
+    climate:  t('cats.climate')  || 'Мир без катастроф',
+    personal: t('cats.personal') || 'Личное счастье',
+    family:   t('cats.family')   || 'Помочь Близким',
   };
-  const key = mapKey[cat] || cat;
-  const txt = t(key);
-  return (txt && txt !== key) ? txt : String(cat);
+  return map[k] || k;
 }
 
 
@@ -727,13 +730,27 @@ async function initProfile() {
   });
 }
 
+// ——— Toast (красивый, без window.alert) ———
 function showToast(keyOrText) {
   const box = document.getElementById('toast');
-  if (!box) return alert(typeof keyOrText === 'string' ? t(keyOrText) : 'OK');
-  box.textContent = typeof keyOrText === 'string' ? t(keyOrText) : String(keyOrText);
+  if (!box) return; // тихо выходим, если контейнер не найден
+
+  // текст: если ключ перевода — t('...'), иначе — как есть
+  const msg = (typeof keyOrText === 'string')
+    ? (t(keyOrText) || keyOrText)
+    : String(keyOrText);
+
+  box.textContent = msg;
+  box.classList.remove('hide');
+  // перезапускаем анимацию
+  void box.offsetWidth; 
   box.classList.add('show');
-  setTimeout(() => box.classList.remove('show'), 2000);
+
+  // авто-скрытие
+  clearTimeout(box._hid);
+  box._hid = setTimeout(() => box.classList.remove('show'), 2200);
 }
+
 
 function renderStats(data) {
   // ... твой существующий вывод категорий и стран
@@ -803,6 +820,7 @@ function regionValueToCode(v){
   return m[k] || '';
 }
 
+
 // === LIVE limiter (2 клика на окно) ==========================
 const LIVE_LIMIT = 2;
 const API_KEY = (window.APP_KEY || 'ajK9sdfh2398sdhf923SDHF82shdf9283');
@@ -829,6 +847,19 @@ function incLiveCount(ts = getNextWindowTs()) {
   localStorage.setItem(_liveKey(ts), String(n));
   return n;
 }
+
+// ——— Локализуем подпись категории ———
+function categoryLabel(code) {
+  const map = {
+    war:      t('cats.war')      || t('intent.war')      || 'Остановим войны',
+    climate:  t('cats.climate')  || t('intent.climate')  || 'Мир без катастроф',
+    personal: t('cats.personal') || t('intent.personal') || 'Личное счастье',
+    family:   t('cats.family')   || t('intent.family')   || 'Помочь Близким',
+  };
+  return map[code] || code;
+}
+
+
 
 // Отправка голоса через 61 секунду ("после минуты") с проверкой профиля
 async function sendVoteAfterMinute(category, profile) {
@@ -874,12 +905,11 @@ async function sendVoteAfterMinute(category, profile) {
         return;
       }
 
-      // 5️⃣ Успех — тост локализован + "человеческое" имя категории
-      const title = categoryTitle(category);
-      showToast(t('vote.ok') + ': ' + title);
-      
-      try { window.showSuccessOnce?.(); } catch(e) { console.warn('showSuccessOnce error', e); }
-
+      // 4) Успех — локализованная подпись категории + текст
+      const label  = categoryLabel(category);
+      const okText = (t('vote.ok') || 'Голос засчитан: {label}')
+        .replace('{label}', label);
+      showToast(okText);
 
     } catch (e) {
       console.error('vote err', e);
@@ -1213,7 +1243,7 @@ intentBtns.forEach(btn => {
         startBtn.classList.remove('finger-running');
         // Голос отправляет sendVoteAfterMinute (для LIVE), а для DEFER — отложенная логика.
         try { Telegram?.WebApp?.sendData(JSON.stringify({type:'minute:end', intent, mode: MODE})); } catch {}
-        ///showToast(t('minute.done'));
+        showToast(t('minute.done') || 'Минута завершена');
       }
     };
     tick();
