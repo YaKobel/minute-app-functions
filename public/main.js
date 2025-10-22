@@ -262,6 +262,21 @@ function applyI18n(root = document) {
 }
 
 
+// Локализованная подпись категории для тоста
+function categoryTitle(cat) {
+  const mapKey = {
+    war: 'categories.war',
+    climate: 'categories.climate',
+    personal: 'categories.personal',
+    family: 'categories.family'
+  };
+  const key = mapKey[cat] || cat;
+  const txt = t(key);
+  return (txt && txt !== key) ? txt : String(cat);
+}
+
+
+
 (function showSplashOnce() {
   try {
     if (localStorage.getItem('splash_shown') === '1') return;
@@ -859,16 +874,12 @@ async function sendVoteAfterMinute(category, profile) {
         return;
       }
 
-      // 5️⃣ Успех — показываем тост и запускаем видео успеха
-      showToast('Голос засчитан: ' + category);
-      try {
-        if (window.showSuccessOnce) {
-          console.log('🎬 success video trigger'); // лог в консоль
-          window.showSuccessOnce();
-        }
-      } catch (e) {
-        console.warn('showSuccessOnce error', e);
-      }
+      // 5️⃣ Успех — тост локализован + "человеческое" имя категории
+      const title = categoryTitle(category);
+      showToast(t('vote.ok') + ': ' + title);
+      
+      try { window.showSuccessOnce?.(); } catch(e) { console.warn('showSuccessOnce error', e); }
+
 
     } catch (e) {
       console.error('vote err', e);
@@ -878,40 +889,50 @@ async function sendVoteAfterMinute(category, profile) {
 
 
 
-// Показ мини-видео успеха ТОЛЬКО по запросу (без автозапуска на странице)
+// Показ мини-видео "успех" (классы вместо инлайн-стилей)
 window.showSuccessOnce = function showSuccessOnce() {
-  console.log('🎬 showSuccessOnce(): запуск видео успеха');
-  // 1) создаём/переиспользуем overlay один раз
   let box = document.getElementById('successOverlay');
   if (!box) {
     box = document.createElement('div');
     box.id = 'successOverlay';
-    box.style = 'position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999';
+    box.className = 'overlay overlay--success';              // ← только классы
+
+    const inner = document.createElement('div');
+    inner.className = 'overlay__inner';
     const v = document.createElement('video');
     v.id = 'successVideo';
-    v.setAttribute('playsinline','');
-    v.setAttribute('muted','');      // для автоплея на мобилках
-    v.setAttribute('autoplay','');
-    v.setAttribute('preload','metadata');
-    v.style = 'max-width:100%;max-height:100%';
-    // жёсткая ссылка на GitHub Pages (самый стабильный источник)
+    v.className = 'overlay__video';
+    v.setAttribute('playsinline', '');
+    v.setAttribute('muted', '');
+    v.setAttribute('autoplay', '');
+    v.setAttribute('preload', 'metadata');
     v.innerHTML = '<source src="https://yakobel.github.io/minute-app-functions/media/app_success.mp4" type="video/mp4">';
-    box.appendChild(v);
+
+    inner.appendChild(v);
+    box.appendChild(inner);
     document.body.appendChild(box);
   }
-  // 2) показать и проиграть
+
   const v = document.getElementById('successVideo');
-  const hide = () => { box.style.display = 'none'; try { v.pause(); v.currentTime = 0; } catch {} };
-  box.onclick = hide;
-  v.onended = hide;
-  v.onerror = hide;
-  box.style.display = 'flex';
+  const hide = () => {
+    box.classList.remove('is-visible');
+    try { v.pause(); v.currentTime = 0; } catch {}
+  };
+
+  // показать
+  box.classList.add('is-visible');
+
+  // авто-закрытие
+  box.addEventListener('click', hide, { once: true });
+  v.addEventListener('ended', hide, { once: true });
+  v.addEventListener('error', hide, { once: true });
+
   try { v.currentTime = 0; } catch {}
   const p = v.play();
-  if (p && p.catch) p.catch(() => setTimeout(hide, 1200)); // если автоплей запретили
-  // жёсткая страховка — вдруг ни ended, ни error не пришли
+  if (p && p.catch) p.catch(() => setTimeout(hide, 1200));
   setTimeout(hide, 3500);
 };
+
 
 
 // Нормализуем строку: дефис, пробелы, разные тире
@@ -1192,7 +1213,7 @@ intentBtns.forEach(btn => {
         startBtn.classList.remove('finger-running');
         // Голос отправляет sendVoteAfterMinute (для LIVE), а для DEFER — отложенная логика.
         try { Telegram?.WebApp?.sendData(JSON.stringify({type:'minute:end', intent, mode: MODE})); } catch {}
-        showToast('Минута завершена');
+        ///showToast(t('minute.done'));
       }
     };
     tick();

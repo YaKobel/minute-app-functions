@@ -502,4 +502,35 @@ body.modal-open { overflow: hidden; }
   to { transform: rotate(360deg); }
 }
 
+/* ==== success overlay (видео) ==== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.overlay.is-visible { display: flex; }
+
+.overlay--success { background: rgba(0,0,0,.9); }
+
+.overlay__inner {
+  width: 100%;
+  max-width: 680px;
+  padding: 0 16px;
+}
+
+.overlay__video {
+  width: 100%;
+  max-height: 80vh;
+  outline: none;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.5);
+}
+
+
+
 #remindBtn { display: none !important; }
+
+
