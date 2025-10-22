@@ -61,12 +61,15 @@
   "profile.note": "",
   "toast.saved": "Збережено",
   
-  "vote.ok": "Голос зараховано",
+  "vote.ok": "Голос зараховано: {label}",
   "minute.done": "Хвилина завершена",
-  "intent.war": "Зупинимо війни",
-  "intent.climate": "Світ без катастроф",
-  "intent.personal": "Особисте щастя",
-  "intent.family": "Допомогти близьким",
+  "cats": {
+    "war": "Зупинимо війни",
+    "climate": "Світ без катастроф",
+    "personal": "Особисте щастя",
+    "family": "Допомогти близьким"
+  },
+  
   "success.title": "Дякуємо!",
   "success.subtitle": "Ваш голос враховано",
 

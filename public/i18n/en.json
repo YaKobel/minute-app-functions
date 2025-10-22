@@ -61,15 +61,18 @@
   "profile.note": "",
   "toast.saved": "Profile saved",
   
-  "vote.ok": "Vote counted",
+  "vote.ok": "Vote counted: {label}",
   "minute.done": "Minute is over",
-  "intent.war": "Stop the wars",
-  "intent.climate": "World without disasters",
-  "intent.personal": "Personal happiness",
-  "intent.family": "Support your family",
+  "cats": {
+    "war": "Stop wars",
+    "climate": "World without disasters",
+    "personal": "Personal happiness",
+    "family": "Support your family"
+  },
+  
   "success.title": "Thank you!",
   "success.subtitle": "Your vote was counted",
-
+  
   "regions.north": "North",
   "regions.south": "South",
   "regions.west": "West",
