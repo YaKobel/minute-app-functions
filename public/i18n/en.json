@@ -24,6 +24,11 @@
   "stats.day": "Day",
   "stats.week": "Week",
   "stats.month": "Month",
+  "stats.year": "Year",
+  "stats.3m": "3 mo",
+  "stats.6m": "6 mo",
+  "stats.all": "All time",
+  
   "stats.total": "Total marks",
   "stats.topCountries": "Top countries",
   "stats.topRegions": "Regions",

@@ -22,6 +22,11 @@
   "stats.day": "День",
   "stats.week": "Неделя",
   "stats.month": "Месяц",
+  "stats.year": "Год",
+  "stats.3m": "3 мес",
+  "stats.6m": "6 мес",
+  "stats.all": "Все время",
+  
   "stats.total": "Всего отметок",
   "stats.topCountries": "ТОП стран",
   "stats.topRegions": "Регионы страны",

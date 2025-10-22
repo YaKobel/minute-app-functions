@@ -470,16 +470,31 @@ app.post('/api/vote', requireKey, async (req, res) => {
 // статистика (категории, страны, регионы, пол, возрастные корзины)
 app.get('/api/stats', requireKey, async (req, res) => {
   try {
-    const period = (req.query.period || 'day').toLowerCase(); // day|week|month
+    const period = String(req.query.period || 'day').toLowerCase(); // day|week|month|3m|6m|year|all
     const now = Date.now();
-    const oneDay = 24 * 60 * 60 * 1000;
-    const ranges = { day: now - oneDay, week: now - 7 * oneDay, month: now - 30 * oneDay };
-    const since = ranges[period] || ranges.day;
+    const day = 24 * 60 * 60 * 1000;
 
-    const sinceTS = admin.firestore.Timestamp.fromMillis(since);
+    // поддержка новых периодов
+    const map = {
+      day  : now - 1  * day,
+      week : now - 7  * day,
+      month: now - 30 * day,
+      '3m' : now - 90  * day,
+      '6m' : now - 180 * day,
+      year : now - 365 * day
+      // all -> особый случай
+    };
 
-    // 1) голоса за период
-    const votesSnap = await db.collection('votes').where('createdAt', '>=', sinceTS).get();
+    let votesSnap;
+    if (period === 'all') {
+      // без фильтра по дате — берём все документы
+      votesSnap = await db.collection('votes').get();
+    } else {
+      const since = map[period] ?? map['day'];
+      const sinceTS = admin.firestore.Timestamp.fromMillis(since);
+      votesSnap = await db.collection('votes').where('createdAt', '>=', sinceTS).get();
+    }
+
 
     // 2) агрегация
     let total = 0;

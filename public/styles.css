@@ -529,5 +529,18 @@ body.modal-open { overflow: hidden; }
   box-shadow: 0 10px 40px rgba(0,0,0,.5);
 }
 
-
 #remindBtn { display: none !important; }
+
+/* Горизонтальная прокрутка вкладок в статистике */
+.tabs-scroll {
+  display: flex;
+  overflow-x: auto;
+  gap: 8px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs-scroll .tab {
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+

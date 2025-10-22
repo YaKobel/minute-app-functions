@@ -24,6 +24,11 @@
   "stats.day": "День",
   "stats.week": "Тиждень",
   "stats.month": "Місяць",
+  "stats.year": "Рік",
+  "stats.3m": "3 міс",
+  "stats.6m": "6 міс",
+  "stats.all": "Увесь час",
+  
   "stats.total": "Всього відміток",
   "stats.topCountries": "ТОП країн",
   "stats.topRegions": "Регіони країни",
