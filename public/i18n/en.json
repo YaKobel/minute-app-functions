@@ -61,12 +61,12 @@
   "profile.note": "",
   "toast.saved": "Profile saved",
   
-  "vote.ok": "Vote counted: {{label}}",
+  "vote.ok": "Vote counted",
   "minute.done": "Minute is over",
-  "intent.war": "Stop wars",
+  "intent.war": "Stop the wars",
   "intent.climate": "World without disasters",
   "intent.personal": "Personal happiness",
-  "intent.family": "Help loved ones",
+  "intent.family": "Support your family",
   "success.title": "Thank you!",
   "success.subtitle": "Your vote was counted",
 
