@@ -71,56 +71,93 @@ const LOCK_PREFIX = 'minute.lock.';
 ///document.addEventListener('DOMContentLoaded', showSplashOnce);
 
 
-// ====== INTRO (app_intro.mp4) — показывать 1 раз на вкладку ======
+// ====== INTRO (app_intro.mp4) — один раз на вкладку, можно закрыть кликом ======
 const INTRO_KEY = 'intro_played';
 
 function hideIntro() {
   const wrap = document.getElementById('splash');
   const v    = document.getElementById('splashVideo');
-  if (wrap) wrap.style.display = 'none';
-  if (v) { try { v.pause(); v.currentTime = 0; } catch(_){} }
+  if (v) { try { v.pause(); v.currentTime = 0; } catch(_) {} }
+  if (wrap) {
+    wrap.classList.remove('show');
+    wrap.style.display = 'none';              // брутфорс на случай чужих стилей
+  }
 }
 
 function ensureIntroOverlay() {
-  if (document.getElementById('splash') && document.getElementById('splashVideo')) return;
-  const wrap = document.createElement('div');
-  wrap.id = 'splash';
-  wrap.style = 'position:fixed;inset:0;background:#000;display:none;z-index:9999;align-items:center;justify-content:center';
-  const v = document.createElement('video');
-  v.id = 'splashVideo';
-  v.setAttribute('playsinline','');
-  v.setAttribute('muted','');
-  v.setAttribute('autoplay','');
-  v.setAttribute('preload','metadata');
-  v.style = 'max-width:100%;max-height:100%;outline:none';
-  v.innerHTML = `<source src="https://yakobel.github.io/minute-app-functions/media/app_intro.mp4" type="video/mp4">`;
-  wrap.appendChild(v);
-  document.body.appendChild(wrap);
+  let wrap = document.getElementById('splash');
+  let v    = document.getElementById('splashVideo');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'splash';
+    document.body.appendChild(wrap);
+  }
+  if (!v) {
+    v = document.createElement('video');
+    v.id = 'splashVideo';
+    v.setAttribute('playsinline', '');
+    v.setAttribute('muted', '');
+    v.setAttribute('autoplay', '');
+    v.setAttribute('preload', 'metadata');
+    // ТВОЙ источник интро:
+    v.innerHTML = `<source src="https://yakobel.github.io/minute-app-functions/media/app_intro.mp4" type="video/mp4">`;
+    wrap.appendChild(v);
+  }
+
+  // обработчики закрытия — ставим один раз
+  if (!wrap._introBound) {
+    const close = () => {
+      hideIntro();
+      try { sessionStorage.setItem(INTRO_KEY, '1'); } catch(_) {}
+      window.removeEventListener('keydown', onEsc, true);
+    };
+    const onEsc = (e) => { if (e.key === 'Escape') close(); };
+
+    wrap.addEventListener('click', close, { passive:true });
+    v.addEventListener('ended', close, { once:true });
+    v.addEventListener('error', close, { once:true });
+    window.addEventListener('keydown', onEsc, true);
+
+    wrap._introBound = true;
+  }
+  return { wrap, v };
 }
 
-function showIntroOncePerTab() {
-  try {
-    if (sessionStorage.getItem(INTRO_KEY) === '1') return;
-  } catch (_) {}
-  ensureIntroOverlay();
-  const wrap = document.getElementById('splash');
-  const v    = document.getElementById('splashVideo');
-  if (!wrap || !v) return;
-  const done = () => {
-    hideIntro();
-    try { sessionStorage.setItem(INTRO_KEY, '1'); } catch(_) {}
-  };
+function showIntro() {
+  const { wrap, v } = ensureIntroOverlay();
+
+  // показать оверлей
   wrap.style.display = 'flex';
-  v.addEventListener('ended', done, { once: true });
-  v.addEventListener('error', done, { once: true });
-  setTimeout(done, 8000);
-  try { v.play(); } catch(_) {}
+  wrap.classList.add('show');
+
+  // попытаться проиграть (если автоплей заблокирован — оверлей все равно виден)
+  setTimeout(() => { try { v.play(); } catch(_) {} }, 0);
+
+  // страховка на 10 сек: в любом случае интро не зависнет навсегда
+  clearTimeout(wrap._introTimer);
+  wrap._introTimer = setTimeout(() => {
+    if (wrap.classList.contains('show')) {
+      hideIntro();
+      try { sessionStorage.setItem(INTRO_KEY, '1'); } catch(_) {}
+    }
+  }, 10000);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  if (/[?&]noIntro=1\b/.test(location.search)) return;
-  showIntroOncePerTab();
-});
+function maybeShowIntro() {
+  // ручные флаги в урле:
+  const force  = /(?:\?|&)intro=force\b/.test(location.search);
+  const noIntro= /(?:\?|&)noIntro=1\b/.test(location.search);
+  if (noIntro) return;
+
+  let already;
+  try { already = (sessionStorage.getItem(INTRO_KEY) === '1'); } catch(_) { already = false; }
+
+  if (!already || force) showIntro();
+}
+
+// Автозапуск при загрузке страницы
+document.addEventListener('DOMContentLoaded', maybeShowIntro);
+
 
 // ===== Presence: пульс + обновление счетчика =====
 const PULSE_MS = 25_000;  // каждые 25с держим "онлайн"
