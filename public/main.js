@@ -1358,15 +1358,39 @@ intentBtns.forEach(btn => {
 
 // ===== 🌐 Multi-language dropdown =====
 const SUPPORTED_LANGS = {
-  ru: 'Русский',
-  en: 'English',
-  uk: 'Українська',
-  // добавляй дальше по мере готовности переводов:
-  es: 'Español',
-  de: 'Deutsch',
-  fr: 'Français',
-  pl: 'Polski',
-  tr: 'Türkçe'
+  en: 'English 🇺🇸',
+  es: 'Español 🇪🇸',
+  zh: '中文 🇨🇳',
+  ar: 'العربية 🇸🇦',
+  pt: 'Português 🇵🇹',
+  ru: 'Русский 🇷🇺',
+  fr: 'Français 🇫🇷',
+  id: 'Indonesia 🇮🇩',
+  de: 'Deutsch 🇩🇪',
+  ja: '日本語 🇯🇵',
+  hi: 'हिन्दी 🇮🇳',
+  tr: 'Türkçe 🇹🇷',
+  ko: '한국어 🇰🇷',
+  it: 'Italiano 🇮🇹',
+  pl: 'Polski 🇵🇱',
+  vi: 'Tiếng Việt 🇻🇳',
+  th: 'ไทย 🇹🇭',
+  uk: 'Українська 🇺🇦',
+  fa: 'فارسی 🇮🇷',
+  ms: 'Bahasa Melayu 🇲🇾',
+  nl: 'Nederlands 🇳🇱',
+  tl: 'Filipino 🇵🇭',
+  bn: 'বাংলা 🇧🇩',
+  ro: 'Română 🇷🇴',
+  el: 'Ελληνικά 🇬🇷',
+  cs: 'Čeština 🇨🇿',
+  sv: 'Svenska 🇸🇪',
+  da: 'Dansk 🇩🇰',
+  hu: 'Magyar 🇭🇺',
+  fi: 'Suomi 🇫🇮',
+  hr: 'Hrvatski 🇭🇷',
+  he: 'עברית 🇮🇱',
+  sw: 'Kiswahili 🇰🇪'
 };
 
 // безопасно поставить язык и применить i18n
