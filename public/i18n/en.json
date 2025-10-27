@@ -12,7 +12,7 @@
   "mode.note.live":   "“Live” mode: the vote is counted instantly (up to 2 times per window).",
   "mode.note.defer":  "“Deferred” mode: the vote will be counted in the next window.",
 
-  "minute.next": "Next window (UTC)",
+  "minute.next": "Next window is Greenwich Mean Time (GMT)",
   "presence.now": "People online now",
   "minute.choose": "Choose an intention",
   "intent.war": "Stop the wars",

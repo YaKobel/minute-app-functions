@@ -9,7 +9,7 @@
   "btn.close": "Закрыть",
 
 
-  "minute.next": "Следующее окно (UTC)",
+  "minute.next": "Следующее окно по Гринвичу (GMT)",
   "presence.now": "Сейчас в онлайне",
   "minute.choose": "Выбери намерение",
 
