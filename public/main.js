@@ -1326,7 +1326,7 @@ intentBtns.forEach(btn => {
     const hh = String(Math.floor(diff / 3_600_000)).padStart(2, '0'); diff %= 3_600_000;
     const mm = String(Math.floor(diff / 60_000)).padStart(2, '0');    diff %= 60_000;
     const ss = String(Math.floor(diff / 1000)).padStart(2, '0');
-    nextEtaEl.textContent = `00:00 / 08:00 / 16:00 • через ${hh}:${mm}:${ss} (UTC)`;
+    nextEtaEl.textContent = `00:00 / 08:00 / 16:00 • ➡️ ${hh}:${mm}:${ss} (UTC)`;
 
     maybeFireReminders();
 

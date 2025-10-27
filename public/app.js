@@ -112,7 +112,7 @@ document.querySelectorAll('.cta[data-vote]').forEach((btn) => {
     const hh = String(Math.floor(sec / 3600)).padStart(2, '0');
     const mm = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
     const ss = String(sec % 60).padStart(2, '0');
-    el.textContent = `00:00 / 08:00 / 16:00  •  ➡️ ${hh}:${mm}:${ss}`;
+    el.textContent = `00:00 / 08:00 / 16:00  • ➡️ ${hh}:${mm}:${ss}`;
   }
 
   function nextWindowUTC(dNow) {
