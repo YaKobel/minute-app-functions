@@ -561,3 +561,16 @@ body.modal-open { overflow: hidden; }
   flex: 0 0 auto;
 }
 
+.lang-switch { position: relative; display:inline-block; margin-left: 6px; }
+.lang-menu   { position: absolute; top: 110%; right: 0; min-width: 180px;
+  background: var(--card,#fff); color: var(--text,#111);
+  border: 1px solid rgba(0,0,0,.08); border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.12); padding: 6px; z-index: 50;
+  max-height: 260px; overflow: auto;
+}
+.lang-menu.hidden { display:none; }
+.lang-menu button { display:block; width:100%; text-align:left;
+  padding:10px 12px; border:0; background:transparent; border-radius: 8px;
+  cursor:pointer; font: inherit;
+}
+.lang-menu button:hover { background: rgba(0,0,0,.06); }

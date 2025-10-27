@@ -1354,3 +1354,73 @@ intentBtns.forEach(btn => {
   setInterval(renderEta, 1000);
   applyHeroRainbow(); // на всякий случай сразу проставить начальное состояние
 });
+
+
+// ===== 🌐 Multi-language dropdown =====
+const SUPPORTED_LANGS = {
+  ru: 'Русский',
+  en: 'English',
+  uk: 'Українська',
+  // добавляй дальше по мере готовности переводов:
+  es: 'Español',
+  de: 'Deutsch',
+  fr: 'Français',
+  pl: 'Polski',
+  tr: 'Türkçe'
+};
+
+// безопасно поставить язык и применить i18n
+function setLangSafe(code) {
+  try { localStorage.setItem('lang', code); } catch(_) {}
+  if (typeof setLang === 'function') {
+    // у тебя уже есть i18n: setLang(...) + ререндер
+    setLang(code);
+    if (typeof applyI18n === 'function') applyI18n();
+  } else {
+    // запасной путь: перезагрузить страницу с параметром
+    const url = new URL(location.href);
+    url.searchParams.set('lang', code);
+    location.href = url.toString();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn  = document.getElementById('moreLangsBtn');
+  const menu = document.getElementById('langMenu');
+  if (!btn || !menu) return;
+
+  // построить список один раз
+  menu.innerHTML = Object.entries(SUPPORTED_LANGS)
+    .map(([code, label]) => `<button type="button" role="menuitem" data-lang="${code}">${label}</button>`)
+    .join('');
+
+  // открыть/закрыть
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = menu.classList.toggle('hidden');
+    btn.setAttribute('aria-expanded', String(!open));
+  });
+
+  // выбор языка
+  menu.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-lang]');
+    if (!b) return;
+    setLangSafe(b.dataset.lang);
+    menu.classList.add('hidden');
+    btn.setAttribute('aria-expanded', 'false');
+  });
+
+  // закрытия по клику вне и по Esc
+  document.addEventListener('click', (e) => {
+    if (!menu.classList.contains('hidden') && !menu.contains(e.target) && e.target !== btn) {
+      menu.classList.add('hidden');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      menu.classList.add('hidden');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+  });
+});
