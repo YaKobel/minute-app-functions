@@ -546,4 +546,17 @@ body.modal-open { overflow: hidden; }
   flex: 0 0 auto;
 }
 
+/* --- Intro (splash) --- */
+#splash{
+  position:fixed; inset:0; display:none;
+  background:#000; z-index:9999;
+  align-items:center; justify-content:center;
+  cursor:pointer;            /* клик для закрытия */
+  -webkit-tap-highlight-color: transparent;
+}
+#splash.show{ display:flex; }
+#splashVideo{
+  max-width:100%; max-height:100%;
+  outline:none; object-fit:contain;
+}
 
