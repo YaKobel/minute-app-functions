@@ -1,5 +1,4 @@
 // ========= i18n loader (RU / EN / UK) =========
-const LS_LANG_KEY = 'minute.lang';
 let I18N_CACHE = {};
 let I18N_CURRENT = {};
 
@@ -222,8 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-
-
 function makeHiddenPlaceholderOption(label, selected) {
   const o = document.createElement('option');
   o.value = '';
@@ -234,15 +231,6 @@ function makeHiddenPlaceholderOption(label, selected) {
   return o;
 }
 
-
-function getLang() {
-  const q = new URLSearchParams(location.search).get('lang');
-  if (q && ['ru','en','uk'].includes(q)) {
-    localStorage.setItem(LS_LANG_KEY, q);
-    return q;
-  }
-  return localStorage.getItem(LS_LANG_KEY) || 'ru';
-}
 
 async function loadI18n(lang) {
   if (I18N_CACHE[lang]) {
@@ -302,10 +290,10 @@ function applyI18n(root = document) {
 // Локализованная подпись категории для тоста
 function categoryTitle(cat) {
   const mapKey = {
-    war: 'categories.war',
-    climate: 'categories.climate',
-    personal: 'categories.personal',
-    family: 'categories.family'
+    war: 'cats.war',
+    climate: 'cats.climate',
+    personal: 'cats.personal',
+    family: 'cats.family'
   };
   const key = mapKey[cat] || cat;
   const txt = t(key);
@@ -339,23 +327,24 @@ function categoryTitle(cat) {
 document.addEventListener('DOMContentLoaded', async () => {
   // I18n bootstrap
   const lang = getLang();
+  // применим HTML-атрибуты до загрузки переводов
+  document.documentElement.lang = lang;
+  document.documentElement.dir  = RTL_LANGS.has(lang) ? 'rtl' : 'ltr';
   await loadI18n(lang);
   applyI18n(document);
 
-  // Переключатель языка
+  // Переключатель языка (без whitelist)
   document.querySelectorAll('#langSwitch .lang-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const newLang = btn.dataset.lang;
-      if (!['ru','en','uk'].includes(newLang)) return;
-      localStorage.setItem('minute.lang', newLang);
-      await loadI18n(newLang);
-      applyI18n(document);
-      // если мы на профиле — обновим подписи в селектах (страны/регионы)
-      if (typeof refreshProfileSelects === 'function') refreshProfileSelects();
+      await setLang(newLang); // единый поток смены языка
+      // подсветим активную кнопку (если нужно)
+      document.querySelectorAll('#langSwitch .lang-btn')
+        .forEach(b => b.classList.toggle('active', b.dataset.lang === newLang));
     });
   });
 
-  // === About modal wiring (перенесено в ПЕРВЫЙ DOMContentLoaded, чтобы работало везде) ===
+  // === About modal wiring
   const aboutBtn   = document.getElementById('aboutBtn');
   const aboutModal = document.getElementById('aboutModal');
   const aboutClose = document.getElementById('aboutClose');
@@ -374,7 +363,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (p.get('screen') === 'about') openAbout();
   } catch {}
 
-  
   // Какие страницы открыты?
   const onStatsPage   = !!document.getElementById('periodTabs');
   const onProfilePage = !!document.getElementById('profileForm');
@@ -382,6 +370,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (onStatsPage)   initStats();
   if (onProfilePage) initProfile?.();
 });
+
 
 
 
@@ -1356,7 +1345,7 @@ intentBtns.forEach(btn => {
 });
 
 
-// ===== 🌐 Multi-language dropdown =====
+// ===== 🌐 Поддерживаемые языки =====
 const SUPPORTED_LANGS = {
   en: 'English 🇺🇸',
   es: 'Español 🇪🇸',
@@ -1392,21 +1381,38 @@ const SUPPORTED_LANGS = {
   he: 'עברית 🇮🇱',
   sw: 'Kiswahili 🇰🇪'
 };
+const SUPPORTED_CODES = Object.keys(SUPPORTED_LANGS);
+const RTL_LANGS = new Set(['ar','he']); // справа-налево
+const LS_LANG_KEY = 'minute.lang';
 
-// безопасно поставить язык и применить i18n
-function setLangSafe(code) {
-  try { localStorage.setItem('lang', code); } catch(_) {}
-  if (typeof setLang === 'function') {
-    // у тебя уже есть i18n: setLang(...) + ререндер
-    setLang(code);
-    if (typeof applyI18n === 'function') applyI18n();
-  } else {
-    // запасной путь: перезагрузить страницу с параметром
-    const url = new URL(location.href);
-    url.searchParams.set('lang', code);
-    location.href = url.toString();
+// === Единые геттер/сеттер языка ===
+function getLang() {
+  const urlLang = new URLSearchParams(location.search).get('lang');
+  if (urlLang && SUPPORTED_CODES.includes(urlLang)) {
+    try { localStorage.setItem(LS_LANG_KEY, urlLang); } catch {}
+    return urlLang;
   }
+  const saved = localStorage.getItem(LS_LANG_KEY);
+  if (saved && SUPPORTED_CODES.includes(saved)) return saved;
+  return 'en';
 }
+
+async function setLang(code) {
+  if (!SUPPORTED_CODES.includes(code)) return;
+  try { localStorage.setItem(LS_LANG_KEY, code); } catch {}
+  document.documentElement.lang = code;
+  document.documentElement.dir  = RTL_LANGS.has(code) ? 'rtl' : 'ltr';
+  await loadI18n(code);
+  applyI18n(document);
+  if (typeof refreshProfileSelects === 'function') refreshProfileSelects();
+}
+
+
+// Единый путь смены языка
+function setLangSafe(code) {
+  return setLang(code); // всё делает setLang: storage + dir/lang + загрузка JSON
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
   const btn  = document.getElementById('moreLangsBtn');
