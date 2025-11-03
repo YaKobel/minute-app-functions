@@ -323,6 +323,8 @@ function categoryTitle(cat) {
 
 
 
+
+
 // ========= Инициализация =========
 document.addEventListener('DOMContentLoaded', async () => {
   // I18n bootstrap
@@ -1062,6 +1064,69 @@ window.addEventListener('DOMContentLoaded', () => {
   setInterval(applyHeroRainbow, 15000);
 });
 
+// ====== ЗВУК ДЛЯ ОКНА ======
+let audioUnlocked = false;
+
+// Разблокировка аудио после первого пользовательского жеста (нужно для iOS/мобилок)
+function unlockAudioOnce() {
+  if (audioUnlocked) return;
+  const a = document.getElementById('minuteSound');
+  if (!a) return;
+  // краткая "тихая попытка" воспроизведения
+  a.volume = 0.0001;
+  const p = a.play();
+  if (p && typeof p.then === 'function') {
+    p.then(() => {
+      a.pause();
+      a.currentTime = 0;
+      a.volume = 1;
+      audioUnlocked = true;
+    }).catch(() => {
+      // проигнорируем — попробуем позже
+    });
+  }
+}
+// навесим на первый тап/клик/движение
+['pointerdown','click','touchstart','keydown'].forEach(ev =>
+  window.addEventListener(ev, unlockAudioOnce, { once: true, passive: true })
+);
+
+// Счётчик "один раз на окно"
+function currentWindowKeyUTC() {
+  const now = new Date();
+  const h = now.getUTCHours();
+  const slot = (h < 8) ? 0 : (h < 16 ? 8 : 16);
+  // yyyy-mm-dd-<0|8|16>
+  return now.toISOString().slice(0,10) + '-' + slot;
+}
+
+// Проигрываем звук (если ещё не играли в этом окне)
+function playWindowSoundOnce() {
+  try {
+    const key = currentWindowKeyUTC();
+    const flagKey = 'soundPlayed:' + key;
+    if (sessionStorage.getItem(flagKey) === '1') return;
+
+    const a = document.getElementById('minuteSound');
+    if (!a) return;
+
+    a.currentTime = 0;
+    a.volume = 1;
+    const p = a.play();
+    if (p && typeof p.then === 'function') {
+      p.then(() => {
+        sessionStorage.setItem(flagKey, '1');
+      }).catch(() => {
+        // если браузер не дал — попробуем ещё раз при следующем входе/жесте
+      });
+    } else {
+      sessionStorage.setItem(flagKey, '1');
+    }
+  } catch(_) {}
+}
+
+
+
 
 
 // === Главный экран: режимы (🔔/⏳/⚡), напоминания, отложенный/лайв запуск, ETA по UTC ===
@@ -1114,11 +1179,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function applyHeroRainbow() {
     if (!heroEl) return;
-	// если включён форс (тест/демо) — считаем, что окно активно
+    // если включён форс (тест/демо) — считаем, что окно активно
     const forced = Date.now() < rainbowForcedUntil;
     const on = forced || isRainbowWindow();
+  
+    // включаем/выключаем радугу
+    const wasOn = heroEl.classList.contains('rainbow-on');
     heroEl.classList.toggle('rainbow-on', on);
+  
+    // 🎵 если радуга только что появилась — проиграть звук
+    if (on && !wasOn) {
+      playWindowSoundOnce();
+    }
   }
+
 
   const heroEl = document.getElementById('hero');
   let rainbowForcedUntil = 0; // ← добавить эту строку
