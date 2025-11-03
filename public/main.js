@@ -883,7 +883,7 @@ function incLiveCount(ts = getNextWindowTs()) {
 }
 
 // Отправка голоса через 61 секунду ("после минуты") с проверкой профиля
-async function sendVoteAfterMinute(category, profile) {
+async function sendVoteAfterMinute(category, profile, mode = 'live') {
   setTimeout(async () => {
     try {
       // 1️⃣ Проверяем профиль — если чего-то нет, прерываем
@@ -904,6 +904,7 @@ async function sendVoteAfterMinute(category, profile) {
         ageGroup: p.ageGroup,
         lang: p.lang || getLang?.() || 'ru',
         mode: 'live',
+		mode,
         at: Date.now(),
       };
 
@@ -1409,6 +1410,9 @@ intentBtns.forEach(btn => {
       const { intent } = scheduled;
       scheduled = null;
       startMinute(intent);
+	  // отправим голос ПОСЛЕ минуты (как и в LIVE), но с пометкой defer
+	  const profile = (typeof getStoredProfile === 'function' ? getStoredProfile() : {}) || {};
+	  sendVoteAfterMinute(intent, profile, 'defer');
     }
     // подсветка «радужного окна» 3 минуты с начала окна
     applyHeroRainbow();
