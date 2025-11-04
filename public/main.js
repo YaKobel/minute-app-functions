@@ -884,9 +884,9 @@ function incLiveCount(ts = getNextWindowTs()) {
 
 // Отправка голоса через 61 секунду ("после минуты") с проверкой профиля
 async function sendVoteAfterMinute(category, profile, mode = 'live') {
+  // шлём через минуту (чтобы выглядело «после минуты»)
   setTimeout(async () => {
     try {
-      // 1️⃣ Проверяем профиль — если чего-то нет, прерываем
       const p = profile || {};
       const hasProfile = p.country && p.region && p.lang && p.gender && p.ageGroup;
       if (!hasProfile) {
@@ -894,7 +894,6 @@ async function sendVoteAfterMinute(category, profile, mode = 'live') {
         return;
       }
 
-      // 2️⃣ Формируем payload без дефолтов
       const payload = {
         userId: detectUserId?.() || 'web',
         category,
@@ -903,12 +902,10 @@ async function sendVoteAfterMinute(category, profile, mode = 'live') {
         gender: p.gender,
         ageGroup: p.ageGroup,
         lang: p.lang || getLang?.() || 'ru',
-        mode: 'live',
-		mode,
-        at: Date.now(),
+        mode,  // 👈 теперь корректно подставляется "live" или "defer"
+        at: Date.now()
       };
 
-      // 3️⃣ Отправляем запрос на сервер
       const resp = await fetch('/api/vote', {
         method: 'POST',
         headers: {
@@ -918,21 +915,19 @@ async function sendVoteAfterMinute(category, profile, mode = 'live') {
         body: JSON.stringify(payload)
       });
 
-      // 4️⃣ Читаем ответ и проверяем ok:true
       let data = null;
-      try { data = await resp.json(); } catch (_) {}
+      try { data = await resp.json(); } catch {}
+
       if (!resp.ok || !data?.ok) {
         const msg = data?.message || data?.error || 'Ошибка отправки';
         showToast(msg);
         return;
       }
 
-      // 5️⃣ Успех — тост локализован + "человеческое" имя категории
+      // Показ успешного сообщения
       const title = categoryTitle(category);
       showToast(t('vote.ok') + ': ' + title);
-      
-      try { window.showSuccessOnce?.(); } catch(e) { console.warn('showSuccessOnce error', e); }
-
+      try { window.showSuccessOnce?.(); } catch (e) { console.warn('showSuccessOnce error', e); }
 
     } catch (e) {
       console.error('vote err', e);
