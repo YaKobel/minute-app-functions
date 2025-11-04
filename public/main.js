@@ -1320,27 +1320,81 @@ intentBtns.forEach(btn => {
 
   
 
-  // ---- Напоминания за 60 и 5 минут до окна (UTC)
+/// // ---- Напоминания за 60 и 5 минут до окна (UTC)
+/// function maybeFireReminders() {
+///   if (!REMIND_ON) return;
+///   const tsWin = nextUtcWindowTs();
+///   const minsLeft = Math.floor((tsWin - Date.now()) / 60_000);
+///   const k = isoKey(tsWin);
+///   if (minsLeft === 60 && !firedReminders.has(k+'|60')) {
+///     firedReminders.add(k+'|60');
+///     showToast('Через 60 минут начнётся окно (UTC)');
+///     fetch('/api/notify',{method:'POST',headers:{'Content-Type':'application/json'},
+///       body:JSON.stringify({type:'reminder',when:60,windowTs:tsWin})}).catch(()=>{});
+///     try { Telegram?.WebApp?.sendData(JSON.stringify({type:'reminder',when:60,windowTs:tsWin})); } catch {}
+///   }
+///   if (minsLeft === 5 && !firedReminders.has(k+'|5')) {
+///     firedReminders.add(k+'|5');
+///     showToast('Через 5 минут начнётся окно (UTC)');
+///     fetch('/api/notify',{method:'POST',headers:{'Content-Type':'application/json'},
+///       body:JSON.stringify({type:'reminder',when:5,windowTs:tsWin})}).catch(()=>{});
+///     try { Telegram?.WebApp?.sendData(JSON.stringify({type:'reminder',when:5,windowTs:tsWin})); } catch {}
+///   }
+/// }
+  
+  // ---- Напоминания за 60, 5 и 0.5 минут до окна (UTC)
+  const MAX_REMINDER_MESSAGES = 7;
+  const sentReminders = [];
+  
   function maybeFireReminders() {
     if (!REMIND_ON) return;
     const tsWin = nextUtcWindowTs();
     const minsLeft = Math.floor((tsWin - Date.now()) / 60_000);
-    const k = isoKey(tsWin);
-    if (minsLeft === 60 && !firedReminders.has(k+'|60')) {
-      firedReminders.add(k+'|60');
-      showToast('Через 60 минут начнётся окно (UTC)');
-      fetch('/api/notify',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({type:'reminder',when:60,windowTs:tsWin})}).catch(()=>{});
-      try { Telegram?.WebApp?.sendData(JSON.stringify({type:'reminder',when:60,windowTs:tsWin})); } catch {}
+    const secLeft  = Math.floor((tsWin - Date.now()) / 1000);
+    const keyBase  = isoKey(tsWin);
+  
+    // вспомогательная функция для отправки + очистки старых
+    const send = (msg, when) => {
+      firedReminders.add(`${keyBase}|${when}`);
+      showToast(msg);
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'reminder', when, windowTs: tsWin })
+      }).catch(() => {});
+      try {
+        Telegram?.WebApp?.sendData(JSON.stringify({ type: 'reminder', when, windowTs: tsWin }));
+      } catch {}
+  
+      // сохраняем последние 7 сообщений
+      sentReminders.push(msg);
+      while (sentReminders.length > MAX_REMINDER_MESSAGES) sentReminders.shift();
+    };
+  
+    if (minsLeft === 60 && !firedReminders.has(`${keyBase}|60`)) {
+      send('⏰ Через 60 минут начнётся окно (UTC)', 60);
     }
-    if (minsLeft === 5 && !firedReminders.has(k+'|5')) {
-      firedReminders.add(k+'|5');
-      showToast('Через 5 минут начнётся окно (UTC)');
-      fetch('/api/notify',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({type:'reminder',when:5,windowTs:tsWin})}).catch(()=>{});
-      try { Telegram?.WebApp?.sendData(JSON.stringify({type:'reminder',when:5,windowTs:tsWin})); } catch {}
+  
+    if (minsLeft === 5 && !firedReminders.has(`${keyBase}|5`)) {
+      send('⏰ Через 5 минут начнётся окно (UTC)', 5);
+    }
+  
+    // За 30 секунд — отчёт
+    if (secLeft <= 30 && secLeft > 0 && !firedReminders.has(`${keyBase}|30s`)) {
+      firedReminders.add(`${keyBase}|30s`);
+      let count = 30;
+      const timer = setInterval(() => {
+        if (count <= 0) {
+          clearInterval(timer);
+          send('✅ Начали! Окно открыто (UTC)', 0);
+        } else if (count % 5 === 0 || count <= 10) {
+          showToast(`▶️ ${count} секунд до старта (UTC)`);
+        }
+        count--;
+      }, 1000);
     }
   }
+
 
   // ---- Запуск минуты (с твоей синей дугой + радужный внутренний круг)
   function startMinute(intent){
