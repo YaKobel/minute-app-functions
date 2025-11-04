@@ -1048,8 +1048,114 @@ function isRainbowWindow(now = new Date()) {
 function applyHeroRainbow() {
   const hero = document.getElementById('hero');
   if (!hero) return;
-  hero.classList.toggle('rainbow-on', isRainbowWindow());
+
+  const wasOn = hero.classList.contains('rainbow-on');
+  const on    = isRainbowWindow();
+
+  hero.classList.toggle('rainbow-on', on);
+
+  // если радуга только что включилась — стартуем звук на всё окно
+  if (on && !wasOn) {
+    startRainbowSound(); // по умолчанию 3 минуты = RAINBOW_MS
+  }
 }
+
+
+// ====== ЗВУК ДЛЯ "РАДУГИ" (3 минуты) ======
+const RAINBOW_SOUND_KEY = 'rainbowSoundUntil'; // метка в sessionStorage
+let   rainbowSoundTimer  = null;
+let   audioUnlocked      = false;               // разлочка после первого жеста
+
+function getMinuteAudio() {
+  const a = document.getElementById('minuteSound');
+  if (!a) return null;
+  // подстраховка: параметры удобны для мобильных
+  a.setAttribute('playsinline', '');
+  a.setAttribute('webkit-playsinline', '');
+  a.preload = 'auto';
+  a.loop = false;             // нам нужна ровно "длина окна", без бесконечного повтора
+  a.volume = 1.0;
+  return a;
+}
+
+/** Разрешаем проигрывание после первого пользовательского жеста. */
+function unlockAudioOnce() {
+  if (audioUnlocked) return;
+  const a = getMinuteAudio(); if (!a) return;
+  // пробуем mini-play, чтобы браузер дал автоплей
+  const tryPlay = () => a.play().then(() => {
+    a.pause(); a.currentTime = 0;
+    audioUnlocked = true;
+    window.removeEventListener('pointerdown', tryPlay, { passive: true });
+    window.removeEventListener('keydown',     tryPlay, { passive: true });
+    window.removeEventListener('touchstart',  tryPlay, { passive: true });
+  }).catch(() => {/* тихо, ждём следующий жест */});
+
+  window.addEventListener('pointerdown', tryPlay, { once:true, passive:true });
+  window.addEventListener('keydown',     tryPlay, { once:true, passive:true });
+  window.addEventListener('touchstart',  tryPlay, { once:true, passive:true });
+}
+unlockAudioOnce();
+
+/** Стартуем звук на всё окно и сохраняем «до какого времени играть». */
+function startRainbowSound(ms = RAINBOW_MS) {
+  const a = getMinuteAudio(); if (!a) return;
+  // Не трогаем, если уже идёт активная сессия до будущего времени
+  const until = Number(sessionStorage.getItem(RAINBOW_SOUND_KEY) || 0);
+  const now   = Date.now();
+  if (until > now + 1000) {
+    // уже запланировано — просто проверим, что звук играет
+    ensurePlaying();
+    return;
+  }
+
+  // Новая сессия на ms вперед
+  const target = now + ms;
+  sessionStorage.setItem(RAINBOW_SOUND_KEY, String(target));
+
+  a.currentTime = 0;
+  a.play().catch(() => {/* возможно нужна разлочка; разблокируем на жест */});
+
+  if (rainbowSoundTimer) clearInterval(rainbowSoundTimer);
+  rainbowSoundTimer = setInterval(() => {
+    const left = Number(sessionStorage.getItem(RAINBOW_SOUND_KEY) || 0) - Date.now();
+    if (left <= 0) {
+      stopRainbowSound();
+      return;
+    }
+    // если вдруг приостановилось — догоняем
+    ensurePlaying();
+  }, 1500);
+}
+
+/** Доигрываем, если внезапно на паузе (смена видимости, мелкие глюки автоплея). */
+function ensurePlaying() {
+  const a = getMinuteAudio(); if (!a) return;
+  if (a.paused) a.play().catch(()=>{});
+}
+
+/** Останавливаем звук и чистим таймер. */
+function stopRainbowSound() {
+  const a = getMinuteAudio(); if (a) { a.pause(); }
+  sessionStorage.removeItem(RAINBOW_SOUND_KEY);
+  if (rainbowSoundTimer) { clearInterval(rainbowSoundTimer); rainbowSoundTimer = null; }
+}
+
+/** При загрузке страницы продолжаем звук, если у окна ещё не истёк срок. */
+function resumeRainbowSoundIfNeeded() {
+  const until = Number(sessionStorage.getItem(RAINBOW_SOUND_KEY) || 0);
+  if (!until) return;
+  const left = until - Date.now();
+  if (left > 500) startRainbowSound(left);
+}
+// возобновление при заходе на страницу
+document.addEventListener('DOMContentLoaded', resumeRainbowSoundIfNeeded);
+// и при возвращении вкладки на передний план
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') resumeRainbowSoundIfNeeded();
+});
+
+
 
 // ТЕСТ через ?test=rainbow — 20 сек ореол
 window.addEventListener('DOMContentLoaded', () => {
