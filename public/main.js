@@ -842,7 +842,7 @@ function getStoredProfile() {
   }
 }
 
-function norm(s){return (s||'').toString().trim().toLowerCase();}
+
 function regionValueToCode(v){
   const k = norm(v);
   const m = {
@@ -1201,48 +1201,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const WINDOWS_MIN = [0, 8 * 60, 16 * 60];
   // Сколько «горит» радужная подсветка после начала окна
   const RAINBOW_FOR_MS = 3 * 60 * 1000; // 3 минуты
-
-
-  // true, если сейчас в пределах первых 3 минут текущего окна (UTC)
-  function isRainbowWindow(now = Date.now()) {
-    const d = new Date(now);
-    const mins = d.getUTCHours() * 60 + d.getUTCMinutes();
-    const midnightUTC = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0);
-    // найдём старт последнего окна сегодня (<= текущее время)
-    let startMin = WINDOWS_MIN[0];
-    for (const m of WINDOWS_MIN) if (m <= mins) startMin = m;
-    const startTs = midnightUTC + startMin * 60_000;
-    return now >= startTs && now < startTs + RAINBOW_FOR_MS;
-  }
-
-  function applyHeroRainbow() {
-    if (!heroEl) return;
-    // если включён форс (тест/демо) — считаем, что окно активно
-    const forced = Date.now() < rainbowForcedUntil;
-    const on = forced || isRainbowWindow();
-  
-    // включаем/выключаем радугу
-    const wasOn = heroEl.classList.contains('rainbow-on');
-    heroEl.classList.toggle('rainbow-on', on);
-  
-    // 🎵 если радуга только что появилась — проиграть звук
-    if (on && !wasOn) {
-      playWindowSoundOnce();
-    }
-  }
-
-
-  const heroEl = document.getElementById('hero');
-  let rainbowForcedUntil = 0; // ← добавить эту строку
-  // тест: ?test=rainbow — включить радугу на 20 сек
-    if (new URLSearchParams(location.search).get('test') === 'rainbow' && heroEl) {
-      // держим радугу N секунд в тесте (для проверки без ожидания окна)
-      rainbowForcedUntil = Date.now() + 15_000;   // 15 сек для демо
-      // на случай мгновенного первого тика таймера
-	  applyHeroRainbow();
-      setTimeout(applyHeroRainbow, 50);
-    }
-
 
 
   // ---- Состояние

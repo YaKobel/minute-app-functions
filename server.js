@@ -766,18 +766,6 @@ if (bot) {
       }
 
 
-
-      // ℹ️ «О проекте» (если нет WEBAPP_URL)
-      if (data === 'about:text') {
-        await bot.answerCallbackQuery(query.id);
-        await bot.sendMessage(
-          chatId,
-          'MINUTE — это короткая коллективная минута внимания три раза в день.\n' +
-          'Окна: 00:00 / 08:00 / 16:00 по UTC. Выберите намерение и отмечайтесь.',
-        );
-        return;
-      }
-
       // Голос из ТГ
       if (data.startsWith('vote:')) {
         const category = data.split(':')[1]; // war|climate|personal|family
