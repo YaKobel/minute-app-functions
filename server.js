@@ -1121,6 +1121,7 @@ if (bot && process.env.TG_REMINDER_LOOP === '1') {
         disable_web_page_preview: true,
         ...opts,
       });
+      // хранить только последние N сообщений на пользователя
       global.sentMessages.push({ chatId, message_id: msg.message_id });
       const userMsgs = global.sentMessages.filter(m => m.chatId === chatId);
       if (userMsgs.length > MAX_TELEGRAM_REMINDERS) {
@@ -1128,73 +1129,89 @@ if (bot && process.env.TG_REMINDER_LOOP === '1') {
         for (const m of toDel) {
           try { await bot.deleteMessage(m.chatId, m.message_id); } catch {}
         }
-        global.sentMessages = global.sentMessages.filter(
-          m => !toDel.includes(m)
-        );
+        global.sentMessages = global.sentMessages.filter(m => !toDel.includes(m));
       }
+      return msg;
     } catch (e) {
       console.error('safeSend error:', e.message);
+      return null;
     }
   }
 
-  setInterval(async () => {
-    try {
-      const now   = new Date();
-      const next  = nextWindowUTC(now);
-      const diffMs  = next - now;
-      const diffMin = Math.floor(diffMs / 60000);
-      const diffSec = Math.floor(diffMs / 1000);
+  // ВЫНЕСЕНО: единая функция, которую можно дергать и вручную
+  async function maybeFireReminders() {
+    const now   = new Date();
+    const next  = nextWindowUTC(now);
+    const diffMs  = next - now;
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffSec = Math.floor(diffMs / 1000);
 
-      const phase60  = diffMin === 60;
-      const phase5   = diffMin === 5;
-      const phase30s = diffSec <= 30 && diffSec >= 0;
-      if (!phase60 && !phase5 && !phase30s) return;
+    const phase60  = diffMin === 60;
+    const phase5   = diffMin === 5;
+    const phase30s = diffSec <= 30 && diffSec >= 0;
 
-      const winKey = windowIso(next);
-      const subsSnap = await db.collection('subs').where('on', '==', true).get();
-      if (subsSnap.empty) return;
+    if (!phase60 && !phase5 && !phase30s) return;
 
-      const batch = db.batch();
-      for (const doc of subsSnap.docs) {
-        const s = doc.data() || {};
-        const chatId = String(doc.id);
+    const winKey = windowIso(next);
+    const subsSnap = await db.collection('subs').where('on', '==', true).get();
+    if (subsSnap.empty) return;
 
-        // === 60 минут
-        if (phase60 && s.last60 !== winKey) {
-          await safeSend(chatId, '⏰ Через 60 минут начнётся окно (UTC)');
-          batch.set(doc.ref, { last60: winKey }, { merge: true });
-          continue;
-        }
+    const batch = db.batch();
 
-        // === 5 минут
-        if (phase5 && s.last5 !== winKey) {
-          await safeSend(chatId, '⏰ Через 5 минут начнётся окно (UTC)', {
-            reply_markup: {
-              inline_keyboard: [[
-                {
-                  text: '🌍 Открыть приложение Time World',
-                  web_app: { url: PUBLIC_BASE || 'https://minute-app-functions.onrender.com' },
-                },
-              ]],
-            },
-          });
-          batch.set(doc.ref, { last5: winKey }, { merge: true });
-          continue;
-        }
+    for (const doc of subsSnap.docs) {
+      const s = doc.data() || {};
+      const chatId = String(doc.id);
 
-        // === 30 секунд
-        if (phase30s && s.last30 !== winKey) {
-          await startThirtyCountdown(bot, chatId, next.getTime());
-          batch.set(doc.ref, { last30: winKey }, { merge: true });
-          continue;
-        }
+      // 60 минут
+      if (phase60 && s.last60 !== winKey) {
+        await safeSend(chatId, '⏰ Через 60 минут начнётся окно (UTC)');
+        batch.set(doc.ref, { last60: winKey }, { merge: true });
+        continue;
       }
 
-      await batch.commit();
-    } catch (e) {
-      console.error('reminders loop error:', e.message);
+      // 5 минут — ОТКРЫТЬ ВЕБ-ПРИЛОЖЕНИЕ как web_app (без голой ссылки)
+      if (phase5 && s.last5 !== winKey) {
+        await safeSend(chatId, '⏰ Через 5 минут начнётся окно (UTC)', {
+          reply_markup: {
+            inline_keyboard: [[
+              {
+                text: '🌍 Открыть приложение Time World',
+                web_app: { url: PUBLIC_BASE || 'https://minute-app-functions.onrender.com' },
+              },
+            ]],
+          },
+        });
+        batch.set(doc.ref, { last5: winKey }, { merge: true });
+        continue;
+      }
+
+      // 30 секунд — запускаем мини-отсчёт (один раз на окно)
+      if (phase30s && s.last30 !== winKey) {
+        try { await startThirtyCountdown(bot, chatId, next.getTime()); } catch {}
+        batch.set(doc.ref, { last30: winKey }, { merge: true });
+        continue;
+      }
     }
-  }, 30_000);
+
+    await batch.commit();
+  }
+
+  // тикать ЧАЩЕ, чтобы не проскочить 30..0 секунд
+  setInterval(() => {
+    maybeFireReminders().catch(e =>
+      console.error('reminders loop error:', e.message)
+    );
+  }, 5_000);
+
+  // === Админ-эндпойнт для ручного запуска цикла (тест из браузера/DevTools) ===
+  app.post('/api/admin/maybe-fire', requireKey, async (_req, res) => {
+    try {
+      await maybeFireReminders();
+      res.json({ ok: true });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: String(e.message || e) });
+    }
+  });
 }
 
 
