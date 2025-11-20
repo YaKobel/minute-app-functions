@@ -574,3 +574,60 @@ body.modal-open { overflow: hidden; }
   cursor:pointer; font: inherit;
 }
 .lang-menu button:hover { background: rgba(0,0,0,.06); }
+
+
+/* === Бегущая строка под заголовком === */
+.ticker {
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 4px 0;
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;                    /* по умолчанию скрыта */
+  transition: opacity 0.4s;
+}
+
+/* внутри — один длинный кусок текста */
+.ticker__inner {
+  display: inline-block;
+  white-space: nowrap;
+  padding-left: 100%;            /* текст стартует слева за экраном */
+
+  /* ДВЕ анимации одновременно:
+     1) движение текста
+     2) смена «радужного» цвета */
+  animation:
+    ticker-move 30s linear infinite,
+    ticker-color 6s linear infinite;
+
+  /* пока радуги нет — всё на паузе */
+  animation-play-state: paused, paused;
+}
+
+/* когда включается радуга (hero получает класс .rainbow-on) —
+   показываем строку и запускаем обе анимации */
+.hero.rainbow-on .ticker {
+  opacity: 1;
+}
+
+.hero.rainbow-on .ticker__inner {
+  animation-play-state: running, running;
+}
+
+/* движение СЛЕВА направо */
+@keyframes ticker-move {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* магическая смена цвета текста */
+@keyframes ticker-color {
+  0%   { color: #3b82f6; text-shadow: 0 0 6px rgba(59,130,246,0.7); }
+  25%  { color: #ec4899; text-shadow: 0 0 6px rgba(236,72,153,0.7); }
+  50%  { color: #22c55e; text-shadow: 0 0 6px rgba(34,197,94,0.7); }
+  75%  { color: #eab308; text-shadow: 0 0 6px rgba(234,179,8,0.7); }
+  100% { color: #3b82f6; text-shadow: 0 0 6px rgba(59,130,246,0.7); }
+}
