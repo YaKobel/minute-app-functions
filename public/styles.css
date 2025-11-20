@@ -586,36 +586,25 @@ body.modal-open { overflow: hidden; }
   font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
-  opacity: 0;                    /* по умолчанию скрыта */
-  transition: opacity 0.4s;
+  opacity: 1;                             /* ВСЕГДА видна */
+  color: var(--text, #111);              /* обычный ч/б текст */
 }
 
 /* внутри — один длинный кусок текста */
 .ticker__inner {
   display: inline-block;
   white-space: nowrap;
-  padding-left: 100%;            /* текст стартует слева за экраном */
+  padding-left: 100%;                     /* старт за левым краем */
+  animation: ticker-move 30s linear infinite;  /* только движение */
+}
 
-  /* ДВЕ анимации одновременно:
-     1) движение текста
-     2) смена «радужного» цвета */
+/* когда включается радуга — добавляем радужный цвет */
+.hero.rainbow-on .ticker__inner {
   animation:
     ticker-move 30s linear infinite,
-    ticker-color 6s linear infinite;
-
-  /* пока радуги нет — всё на паузе */
-  animation-play-state: paused, paused;
+    ticker-color 6s linear infinite;      /* + магическая смена цвета */
 }
 
-/* когда включается радуга (hero получает класс .rainbow-on) —
-   показываем строку и запускаем обе анимации */
-.hero.rainbow-on .ticker {
-  opacity: 1;
-}
-
-.hero.rainbow-on .ticker__inner {
-  animation-play-state: running, running;
-}
 
 /* движение СЛЕВА направо */
 @keyframes ticker-move {
