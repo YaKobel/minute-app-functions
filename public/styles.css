@@ -583,33 +583,32 @@ body.modal-open { overflow: hidden; }
   box-sizing: border-box;
   padding: 4px 0;
   margin-top: 4px;
-  font-size: 14px;
+  font-size: 18px;              /* как заголовок h2 */
   font-weight: 600;
   white-space: nowrap;
-  opacity: 1;                             /* ВСЕГДА видна */
-  color: var(--text, #111);              /* обычный ч/б текст */
+  opacity: 1;                    /* ВСЕГДА видна */
+  color: var(--text, #111);      /* обычный ч/б текст */
 }
 
 /* внутри — один длинный кусок текста */
 .ticker__inner {
   display: inline-block;
   white-space: nowrap;
-  padding-left: 100%;                     /* старт за левым краем */
-  animation: ticker-move 30s linear infinite;  /* только движение */
+  padding-right: 100%;           /* старт за правым краем */
+  animation: ticker-move 60s linear infinite;  /* медленнее движение */
 }
 
-/* когда включается радуга — добавляем радужный цвет */
+/* когда включается радуга — добавляем радужный цвет поверх движения */
 .hero.rainbow-on .ticker__inner {
   animation:
-    ticker-move 30s linear infinite,
-    ticker-color 6s linear infinite;      /* + магическая смена цвета */
+    ticker-move 60s linear infinite,     /* такое же медленное движение */
+    ticker-color 8s linear infinite;     /* перелив цвета */
 }
 
-
-/* движение СЛЕВА направо */
+/* движение СПРАВА НАЛЕВО */
 @keyframes ticker-move {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
 }
 
 /* магическая смена цвета текста */
