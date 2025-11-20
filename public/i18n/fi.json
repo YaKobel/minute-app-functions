@@ -87,6 +87,7 @@
   "mode.live": "Live",
   "mode.defer": "Siirretty",
   "mode.remind": "🔔",
+  "ticker.magic": "Taivaallinen Voima, tule ihmisten luo, anna Viisautta, terveyttä ja Valoa! Olkoon rauha, onni aikojen halki, suru, sairaudet ja pelko kadotkoot. Antakoon ihmisen irtautua pahasta, nousta Jumalan luo ja sielun tulla puhtaaksi. Olkoon se kevyt kuten ennen ja tulkoon säteileväksi. Ajatuksellani luon onnellisuutta, tuon maailmaan Valoa ja rakkautta. Toteutukoon Jumalan unelma – Maa pelastukoon ikuisesti!",
   "mode.note.live": "Live: äänesi lasketaan heti (max 2 kertaa per ikkuna).",
   "mode.note.defer": "Siirretty: äänesi lasketaan automaattisesti seuraavassa UTC-ikkunassa.",
   "mode.note.remind": "Muistutus: ilmoitamme 60 ja 5 minuuttia ennen ikkunaa (UTC).",

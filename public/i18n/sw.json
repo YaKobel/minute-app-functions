@@ -77,6 +77,7 @@
   "mode.live": "Moja kwa moja",
   "mode.defer": "Imeahirishwa",
   "mode.remind": "🔔",
+  "ticker.magic": "Nguvu ya Mbinguni, njoo kwa watu, tupe Hekima, afya na Nuru! Uwepo amani, furaha kwa vizazi, huzuni, magonjwa na hofu zitoweke. Mwanadamu ajitenge na uovu, apae kwa Mungu, na Nafsi iwe safi. Iwe nyepesi kama zamani na ing’aa. Kwa mawazo yangu nitaumba furaha, nitaleta Nuru na upendo kwa dunia. Ndoto ya Mungu itimie – Dunia iokolewe milele!",
   "mode.note.live": "Moja kwa moja: kura yako inahesabiwa mara moja (max 2 kwa dirisha).",
   "mode.note.defer": "Imeahirishwa: kura yako itahesabiwa kiotomatiki kwenye dirisha lijalo la UTC.",
   "mode.note.remind": "Kumbusho: tutakukumbusha dakika 60 na 5 kabla ya dirisha (UTC).",

@@ -77,6 +77,7 @@
   "mode.live": "Live",
   "mode.defer": "Naantala",
   "mode.remind": "🔔",
+  "ticker.magic": "Makapangyarihang Langit, dumating ka sa mga tao, pagkalooban sila ng Karunungan, kalusugan at Liwanag! Nawa’y magkaroon ng kapayapaan, kaligayahan sa mga henerasyon, mawala ang dalamhati, sakit at takot. Nawa’y humiwalay ang tao sa kasamaan, tumaas tungo sa Diyos, at luminis ang Kaluluwa. Nawa’y maging magaan tulad ng dati at maging maningning. Sa aking isip lilikha ako ng kaligayahan, magdadala ako ng Liwanag at pag-ibig sa mundo. Nawa’y matupad ang pangarap ng Diyos – maligtas ang Daigdig magpakailanman!",
   "mode.note.live": "Live: agad na binibilang ang boto mo (max 2x bawat window).",
   "mode.note.defer": "Naantala: awtomatikong bibilangin ang boto mo sa susunod na window ng UTC.",
   "mode.note.remind": "Paalala: ipapaalala namin sa iyo 60 at 5 minuto bago (UTC).",
