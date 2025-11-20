@@ -84,6 +84,14 @@
     <!-- Таймер -->
     <div class="card timer">
       <h2 class="page-title" data-i18n="app.name"></h2>
+
+	  <!-- Бегущая строка -->
+      <div class="ticker" id="heroTicker">
+        <div class="ticker__inner">
+          <span data-i18n="ticker.magic"></span>
+        </div>
+      </div>
+
       <div id="presence" style="text-align:center;margin:8px 0 0;color:#6b7280;font-size:14px;">
         <span data-i18n="presence.now">Сейчас в онлайне</span>:
         <b id="presenceCount">0</b>
