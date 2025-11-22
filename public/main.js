@@ -882,10 +882,10 @@ function incLiveCount(ts = getNextWindowTs()) {
   return n;
 }
 
-// Отправка голоса через 61 секунду ("после минуты") с проверкой профиля
+// Отправка голоса: LIVE — через 61с, DEFER — сразу
 async function sendVoteAfterMinute(category, profile, mode = 'live') {
-  // шлём через минуту (чтобы выглядело «после минуты»)
-  setTimeout(async () => {
+
+  const doSend = async () => {
     try {
       const p = profile || {};
       const hasProfile = p.country && p.region && p.lang && p.gender && p.ageGroup;
@@ -902,7 +902,7 @@ async function sendVoteAfterMinute(category, profile, mode = 'live') {
         gender: p.gender,
         ageGroup: p.ageGroup,
         lang: p.lang || getLang?.() || 'ru',
-        mode,  // 👈 теперь корректно подставляется "live" или "defer"
+        mode,              // "live" или "defer"
         at: Date.now()
       };
 
@@ -924,7 +924,20 @@ async function sendVoteAfterMinute(category, profile, mode = 'live') {
         return;
       }
 
-      // Показ успешного сообщения
+      // --- ВЕТКА ДЛЯ ОТЛОЖЕННОГО ГОЛОСА ---
+      if (mode === 'defer' || data.mode === 'defer') {
+        if (data.applyAt) {
+          const d  = new Date(data.applyAt);
+          const hh = String(d.getUTCHours()).padStart(2, '0');
+          const mm = String(d.getUTCMinutes()).padStart(2, '0');
+          showToast(`Отложенный голос запланирован на ${hh}:${mm} (UTC).`);
+        } else {
+          showToast('Отложенный голос запланирован.');
+        }
+        return;
+      }
+
+      // --- ВЕТКА ДЛЯ LIVE (как раньше) ---
       const title = categoryTitle(category);
       showToast(t('vote.ok') + ': ' + title);
       try { window.showSuccessOnce?.(); } catch (e) { console.warn('showSuccessOnce error', e); }
@@ -932,7 +945,15 @@ async function sendVoteAfterMinute(category, profile, mode = 'live') {
     } catch (e) {
       console.error('vote err', e);
     }
-  }, 61_000); // чуть больше 60 с, чтобы гарантированно «после минуты»
+  };
+
+  if (mode === 'live') {
+    // живой голос — после минуты
+    setTimeout(doSend, 61_000);
+  } else {
+    // отложенный — сразу, без задержки
+    doSend();
+  }
 }
 
 
@@ -1425,21 +1446,19 @@ intentBtns.forEach(btn => {
      const profile = (typeof getStoredProfile === 'function' ? getStoredProfile() : {}) || {};
      sendVoteAfterMinute(selectedIntent, profile);
    } else {
-     // Отложенно — оставляем твою текущую логику (планирование на ближайшее окно)
-     const ts = getNextWindowTs();
-     if (isLocked(ts)) {
-       const d = new Date(ts);
+     // ОТЛОЖЕННО — планируем голос на ближайшее окно через сервер (entries + DEFER_LOOP)
+     const tsDefer = getNextWindowTs();
+     if (isLocked(tsDefer)) {
+       const d = new Date(tsDefer);
        const hh = String(d.getUTCHours()).padStart(2,'0');
        const mm = String(d.getUTCMinutes()).padStart(2,'0');
        showToast?.(`Уже запланирован голос на ${hh}:${mm} (UTC).`);
        return;
      }
-     scheduled = { intent: selectedIntent, ts };
-     lockWindow(ts);
-     const d = new Date(ts);
-     const hh = String(d.getUTCHours()).padStart(2,'0');
-     const mm = String(d.getUTCMinutes()).padStart(2,'0');
-     showToast?.(`Голос запланирован на ${hh}:${mm} (UTC).`);
+     lockWindow(tsDefer);
+
+     const profile = (typeof getStoredProfile === 'function' ? getStoredProfile() : {}) || {};
+     sendVoteAfterMinute(selectedIntent, profile, 'defer');
    }
  });
   // ---- ETA + напоминания + автозапуск отложенного голоса
@@ -1454,15 +1473,15 @@ intentBtns.forEach(btn => {
 
     maybeFireReminders();
 
-    // если запланировано и окно наступило — запускаем минуту
-    if (scheduled && now >= scheduled.ts) {
-      const { intent } = scheduled;
-      scheduled = null;
-      startMinute(intent);
-	  // отправим голос ПОСЛЕ минуты (как и в LIVE), но с пометкой defer
-	  const profile = (typeof getStoredProfile === 'function' ? getStoredProfile() : {}) || {};
-	  sendVoteAfterMinute(intent, profile, 'defer');
-    }
+    //// если запланировано и окно наступило — запускаем минуту
+    //if (scheduled && now >= scheduled.ts) {
+    //  const { intent } = scheduled;
+    //  scheduled = null;
+    //  startMinute(intent);
+	//  // отправим голос ПОСЛЕ минуты (как и в LIVE), но с пометкой defer
+	//  const profile = (typeof getStoredProfile === 'function' ? getStoredProfile() : {}) || {};
+	//  sendVoteAfterMinute(intent, profile, 'defer');
+    //}
     // подсветка «радужного окна» 3 минуты с начала окна
     applyHeroRainbow();
   }

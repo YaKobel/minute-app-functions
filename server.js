@@ -416,7 +416,7 @@ setInterval(presenceCleanup, 30_000);
 
 
 
-// голос
+// голос (live / defer)
 app.post('/api/vote', requireKey, async (req, res) => {
   try {
     const body = req.body || {};
@@ -447,7 +447,36 @@ app.post('/api/vote', requireKey, async (req, res) => {
       return res.status(400).json({ ok: false, message: 'profile_required', missing });
     }
 
-    // 3) пишем голос
+    // 3) режим: live / defer
+    const mode = String(body.mode || 'live').toLowerCase();
+
+    if (mode === 'defer') {
+      // планируем голос на СЛЕДУЮЩЕЕ окно (как в Telegram)
+      const now = Date.now();
+      const applyAtDate = nextWindowTs(now); // функция уже есть выше
+      const applyAt = admin.firestore.Timestamp.fromDate(applyAtDate);
+
+      await db.collection('entries').add({
+        type: 'defer',
+        userId: userId || null,
+        category,
+        country,
+        region,
+        lang,
+        gender,
+        ageGroup,
+        applyAt,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return res.json({
+        ok: true,
+        mode: 'defer',
+        applyAt: applyAtDate.toISOString(),
+      });
+    }
+
+    // по умолчанию — живой голос
     await db.collection('votes').add({
       userId,
       category,
@@ -459,12 +488,13 @@ app.post('/api/vote', requireKey, async (req, res) => {
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    return res.json({ ok: true });
+    return res.json({ ok: true, mode: 'live' });
   } catch (e) {
     console.error('/api/vote error:', e);
     return res.status(500).json({ ok: false, error: 'server' });
   }
 });
+
 
 
 // статистика (категории, страны, регионы, пол, возрастные корзины)
